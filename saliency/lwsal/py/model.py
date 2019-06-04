@@ -1,3 +1,6 @@
+# coding:utf-8
+# @author: xsh
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,7 +8,7 @@ import torch.nn.functional as F
 INPLACE = True
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, find_batch, coarse_batch, label_batch):
         super(Net, self).__init__()
         self.coarse = self.SubNet()
         self.fine = self.SubNet()
@@ -54,9 +57,3 @@ class Net(nn.Module):
     def Pool(self, typ):
         if typ == 'max':
             return nn.MaxPool2d(2, stride=2)
-
-def train():
-    net = Net().cuda()
-
-if __name__ == '__main__':
-    train()
