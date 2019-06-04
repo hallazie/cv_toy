@@ -10,9 +10,10 @@ from torch.autograd import Variable
 from model import *
 from dataiter import *
 
-FINE_PATH = ''
-COARSE_PATH = ''
-LABEL_PATH = ''
+FINE_PATH = 'E:/data/saliency/SALICON/Crop/fine'
+COARSE_PATH = 'E:/data/saliency/SALICON/Crop/coarse'
+LABEL_PATH = 'E:/data/saliency/SALICON/Crop/label'
+PARAM_PATH = 'E:/cv_toy/saliency/lwsal/params'
 BATCH_SIZE = 16
 EPOCHES = 1000
 GRAD_ACCUM = 64
@@ -31,17 +32,24 @@ def train():
 
 	for e in range(EPOCHES):
 		model.train()
-		for batch_i, (_, fines, coarses, labels) in enumerate(dataloader):
+		for batch_i, (fines, coarses, labels) in enumerate(dataloader):
 			batch_done = len(dataloader) * e + batch_i
 			fines = Variable(fines.to(device))
 			coarses = Variable(coarses.to(device))
 			labels = Variable(labels.to(device), requires_grad=False)
 			loss, outputs = model(fines, coarses, labels)
+			print('[INFO] epoch %s, batch %s, MAELoss = %s' % (e, batch_i, loss.data.item()))
 			loss.backward()
 			if batch_done % GRAD_ACCUM:
 				optimizer.step()
 				optimizer.zero_grad()
-				
+			if e % 10 == 0:
+				# state = {
+				# 	'net':model.state_dict(),
+				# 	'optimizer':optimizer.state_dict(),
+				# 	'epoch':e
+				# }
+				torch.save(model, os.path.join(PARAM_PATH, 'model_%s.pkl' % e))
 
 if __name__ == '__main__':
 	train()
