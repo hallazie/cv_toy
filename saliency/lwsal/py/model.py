@@ -8,10 +8,22 @@ import torch.nn.functional as F
 INPLACE = True
 
 class Net(nn.Module):
-    def __init__(self, find_batch, coarse_batch, label_batch):
+    def __init__(self, fine_batch, coarse_batch, label_batch):
         super(Net, self).__init__()
-        self.coarse = self.SubNet()
-        self.fine = self.SubNet()
+        self.fine_batch = fine_batch
+        self.coarse_batch = coarse_batch
+        self.label_batch = label_batch
+
+        self.fine_net = self.SubNet()
+        self.coarse_net = self.SubNet()
+        self.loss = self.MAELoss()
+
+    def forward(self):
+        fine = self.fine_net(self.fine_batch)
+        coarse = self.coarse_net(self.coarse_batch)
+        mul = fine * coarse
+        out = loss(mul, self.label_batch)
+        return out, mul
 
     def SubNet(self):
         return nn.Sequential(
@@ -57,3 +69,6 @@ class Net(nn.Module):
     def Pool(self, typ):
         if typ == 'max':
             return nn.MaxPool2d(2, stride=2)
+
+    def MAELoss(self):
+        return nn.L1Loss()

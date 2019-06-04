@@ -15,6 +15,7 @@ COARSE_PATH = ''
 LABEL_PATH = ''
 BATCH_SIZE = 16
 EPOCHES = 1000
+GRAD_ACCUM = 64
 
 def train():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,7 +37,11 @@ def train():
 			coarses = Variable(coarses.to(device))
 			labels = Variable(labels.to(device), requires_grad=False)
 			loss, outputs = model(fines, coarses, labels)
-
+			loss.backward()
+			if batch_done % GRAD_ACCUM:
+				optimizer.step()
+				optimizer.zero_grad()
+				
 
 if __name__ == '__main__':
 	train()
