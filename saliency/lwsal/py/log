@@ -77,11 +77,3 @@
 [INFO] epoch 0, batch 76, MAELoss = 29.930339813232422
 [INFO] epoch 0, batch 77, MAELoss = 30.933425903320312
 [INFO] epoch 0, batch 78, MAELoss = 27.447946548461914
-Traceback (most recent call last):
-  File "train.py", line 55, in <module>
-    train()
-  File "train.py", line 44, in train
-    optimizer.step()
-  File "C:\Users\halla\AppData\Local\Programs\Python\Python37\lib\site-packages\torch\optim\adam.py", line 101, in step
-    denom = exp_avg_sq.sqrt().add_(group['eps'])
-KeyboardInterrupt
