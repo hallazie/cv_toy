@@ -14,9 +14,9 @@ FINE_PATH = 'E:/data/saliency/SALICON/Crop/fine'
 COARSE_PATH = 'E:/data/saliency/SALICON/Crop/coarse'
 LABEL_PATH = 'E:/data/saliency/SALICON/Crop/label'
 PARAM_PATH = 'E:/cv_toy/saliency/lwsal/params'
-BATCH_SIZE = 16
+BATCH_SIZE = 128
 EPOCHES = 1000
-GRAD_ACCUM = 64
+GRAD_ACCUM = 2
 
 def train():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

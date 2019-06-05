@@ -1,0 +1,87 @@
+[INFO] epoch 0, batch 0, MAELoss = 22.108142852783203
+[INFO] epoch 0, batch 1, MAELoss = 26.525684356689453
+[INFO] epoch 0, batch 2, MAELoss = 23.59161949157715
+[INFO] epoch 0, batch 3, MAELoss = 28.20541000366211
+[INFO] epoch 0, batch 4, MAELoss = 17.975008010864258
+[INFO] epoch 0, batch 5, MAELoss = 41.4122200012207
+[INFO] epoch 0, batch 6, MAELoss = 38.061336517333984
+[INFO] epoch 0, batch 7, MAELoss = 25.032367706298828
+[INFO] epoch 0, batch 8, MAELoss = 21.377460479736328
+[INFO] epoch 0, batch 9, MAELoss = 47.41191482543945
+[INFO] epoch 0, batch 10, MAELoss = 13.992210388183594
+[INFO] epoch 0, batch 11, MAELoss = 21.509572982788086
+[INFO] epoch 0, batch 12, MAELoss = 32.58793640136719
+[INFO] epoch 0, batch 13, MAELoss = 19.328882217407227
+[INFO] epoch 0, batch 14, MAELoss = 30.42560577392578
+[INFO] epoch 0, batch 15, MAELoss = 29.006546020507812
+[INFO] epoch 0, batch 16, MAELoss = 34.59955596923828
+[INFO] epoch 0, batch 17, MAELoss = 28.33879852294922
+[INFO] epoch 0, batch 18, MAELoss = 23.125328063964844
+[INFO] epoch 0, batch 19, MAELoss = 33.01420974731445
+[INFO] epoch 0, batch 20, MAELoss = 36.95526123046875
+[INFO] epoch 0, batch 21, MAELoss = 31.631723403930664
+[INFO] epoch 0, batch 22, MAELoss = 26.3609619140625
+[INFO] epoch 0, batch 23, MAELoss = 20.627670288085938
+[INFO] epoch 0, batch 24, MAELoss = 41.558013916015625
+[INFO] epoch 0, batch 25, MAELoss = 53.049339294433594
+[INFO] epoch 0, batch 26, MAELoss = 33.837158203125
+[INFO] epoch 0, batch 27, MAELoss = 35.004127502441406
+[INFO] epoch 0, batch 28, MAELoss = 18.695331573486328
+[INFO] epoch 0, batch 29, MAELoss = 22.039779663085938
+[INFO] epoch 0, batch 30, MAELoss = 26.293542861938477
+[INFO] epoch 0, batch 31, MAELoss = 24.7364444732666
+[INFO] epoch 0, batch 32, MAELoss = 21.141006469726562
+[INFO] epoch 0, batch 33, MAELoss = 35.85658264160156
+[INFO] epoch 0, batch 34, MAELoss = 32.583526611328125
+[INFO] epoch 0, batch 35, MAELoss = 43.05442428588867
+[INFO] epoch 0, batch 36, MAELoss = 20.199020385742188
+[INFO] epoch 0, batch 37, MAELoss = 32.40016555786133
+[INFO] epoch 0, batch 38, MAELoss = 39.292152404785156
+[INFO] epoch 0, batch 39, MAELoss = 26.51435089111328
+[INFO] epoch 0, batch 40, MAELoss = 38.23878860473633
+[INFO] epoch 0, batch 41, MAELoss = 30.040658950805664
+[INFO] epoch 0, batch 42, MAELoss = 29.073070526123047
+[INFO] epoch 0, batch 43, MAELoss = 38.442893981933594
+[INFO] epoch 0, batch 44, MAELoss = 50.81050109863281
+[INFO] epoch 0, batch 45, MAELoss = 33.68464279174805
+[INFO] epoch 0, batch 46, MAELoss = 44.02821731567383
+[INFO] epoch 0, batch 47, MAELoss = 38.60627365112305
+[INFO] epoch 0, batch 48, MAELoss = 30.858369827270508
+[INFO] epoch 0, batch 49, MAELoss = 20.703107833862305
+[INFO] epoch 0, batch 50, MAELoss = 45.7254524230957
+[INFO] epoch 0, batch 51, MAELoss = 47.401485443115234
+[INFO] epoch 0, batch 52, MAELoss = 22.164722442626953
+[INFO] epoch 0, batch 53, MAELoss = 17.641382217407227
+[INFO] epoch 0, batch 54, MAELoss = 31.20096206665039
+[INFO] epoch 0, batch 55, MAELoss = 56.1144905090332
+[INFO] epoch 0, batch 56, MAELoss = 40.311744689941406
+[INFO] epoch 0, batch 57, MAELoss = 28.121152877807617
+[INFO] epoch 0, batch 58, MAELoss = 45.55574035644531
+[INFO] epoch 0, batch 59, MAELoss = 28.85088539123535
+[INFO] epoch 0, batch 60, MAELoss = 30.510835647583008
+[INFO] epoch 0, batch 61, MAELoss = 42.373565673828125
+[INFO] epoch 0, batch 62, MAELoss = 23.637989044189453
+[INFO] epoch 0, batch 63, MAELoss = 21.643400192260742
+[INFO] epoch 0, batch 64, MAELoss = 22.403451919555664
+[INFO] epoch 0, batch 65, MAELoss = 41.099395751953125
+[INFO] epoch 0, batch 66, MAELoss = 32.14534378051758
+[INFO] epoch 0, batch 67, MAELoss = 37.47902297973633
+[INFO] epoch 0, batch 68, MAELoss = 30.701757431030273
+[INFO] epoch 0, batch 69, MAELoss = 36.212257385253906
+[INFO] epoch 0, batch 70, MAELoss = 36.049747467041016
+[INFO] epoch 0, batch 71, MAELoss = 29.972030639648438
+[INFO] epoch 0, batch 72, MAELoss = 38.084903717041016
+[INFO] epoch 0, batch 73, MAELoss = 33.039798736572266
+[INFO] epoch 0, batch 74, MAELoss = 18.203346252441406
+[INFO] epoch 0, batch 75, MAELoss = 26.331911087036133
+[INFO] epoch 0, batch 76, MAELoss = 29.930339813232422
+[INFO] epoch 0, batch 77, MAELoss = 30.933425903320312
+[INFO] epoch 0, batch 78, MAELoss = 27.447946548461914
+Traceback (most recent call last):
+  File "train.py", line 55, in <module>
+    train()
+  File "train.py", line 44, in train
+    optimizer.step()
+  File "C:\Users\halla\AppData\Local\Programs\Python\Python37\lib\site-packages\torch\optim\adam.py", line 101, in step
+    denom = exp_avg_sq.sqrt().add_(group['eps'])
+KeyboardInterrupt

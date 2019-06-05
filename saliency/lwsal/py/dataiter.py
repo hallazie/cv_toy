@@ -27,9 +27,9 @@ class SaliconSet(Dataset):
 		curr_fine_path = os.path.join(self.fine_path, file_name)
 		curr_coarse_path = os.path.join(self.coarse_path, file_name)
 		curr_label_path = os.path.join(self.label_path, file_name)
-		curr_fine_batch = (np.swapaxes(cv2.imread(curr_fine_path), 0, 2).astype(np.float32) - 127.) / 127.
-		curr_coarse_batch = (np.swapaxes(cv2.imread(curr_coarse_path), 0, 2).astype(np.float32) - 127.) / 127.
-		curr_label_batch = (np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (10, 10), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32) - 127.) / 127.
+		curr_fine_batch = np.swapaxes(cv2.imread(curr_fine_path), 0, 2).astype(np.float32)
+		curr_coarse_batch = np.swapaxes(cv2.imread(curr_coarse_path), 0, 2).astype(np.float32)
+		curr_label_batch = np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (10, 10), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32)
 		return curr_fine_batch, curr_coarse_batch, curr_label_batch
 
 	def __len__(self):
