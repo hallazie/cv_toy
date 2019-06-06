@@ -21,6 +21,7 @@ class SaliconSet(Dataset):
 			break
 		self.img_transform = img_transform
 		self.loader = loader
+		self.jitter = 1e-10
 
 	def __getitem__(self, idx):
 		file_name = self.img_list[idx]
@@ -30,7 +31,16 @@ class SaliconSet(Dataset):
 		curr_fine_batch = np.swapaxes(cv2.imread(curr_fine_path), 0, 2).astype(np.float32)
 		curr_coarse_batch = np.swapaxes(cv2.imread(curr_coarse_path), 0, 2).astype(np.float32)
 		curr_label_batch = np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (10, 10), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32)
+		curr_fine_batch = self.normalize(curr_fine_batch)
+		curr_coarse_batch = self.normalize(curr_coarse_batch)
+		curr_label_batch = self.normalize_label(curr_label_batch)
 		return curr_fine_batch, curr_coarse_batch, curr_label_batch
+
+	def normalize(self, arr):
+		return (arr - np.min(arr)) / float(np.max(arr) - np.min(arr) + self.jitter)
+
+	def normalize_label(self, arr):
+		return arr / 255.
 
 	def __len__(self):
 		return len(self.img_list)

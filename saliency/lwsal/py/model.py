@@ -22,7 +22,7 @@ class Net(nn.Module):
         coarse = self.coarse_net(self.coarse_batch)
         mul = fine * coarse
         out = self.loss(mul, self.label_batch)
-        return out, mul
+        return out, mul, fine, coarse
 
     def SubNet(self):
         return nn.Sequential(
