@@ -38,6 +38,7 @@ def get_logger():
 def train():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	model = Net().to(device)
+	# model = torch.load(os.path.join(PARAM_PATH, 'model_1.pkl')).to(device)
 	dataset = SaliconSet(FINE_PATH, COARSE_PATH, LABEL_PATH)
 	dataloader = DataLoader(
 		dataset,
@@ -64,7 +65,7 @@ def train():
 				optimizer.zero_grad()
 		# if e % 1 == 0:
 		if True:
-			torch.save(model, os.path.join(PARAM_PATH, 'model_%s.pkl' % e))
+			torch.save(model, os.path.join(PARAM_PATH, 'model_%s.pkl' % (e + 1)))
 
 
 if __name__ == '__main__':

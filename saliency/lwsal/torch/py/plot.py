@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 def plot_loss():
 	losses = []
-	with open('log.log', 'r') as log:
+	with open('log', 'r') as log:
 		lines = log.readlines()
 		for line in lines:
 			loss = line.split('MAELoss = ')[-1]
