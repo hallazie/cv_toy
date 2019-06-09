@@ -64,7 +64,7 @@ def net():
 	out_coarse = subnet(data_coarse)
 	out_fine = subnet(data_fine)
 	out = out_coarse * out_fine
-	return mx.symbol.MAERegressionOutput(data=out, label=label)
+	return mx.symbol.Group([mx.symbol.MAERegressionOutput(data=out, label=label), out, out_coarse, out_fine])
 
 def overfit():
 	label = mx.symbol.Variable('label')
@@ -73,4 +73,4 @@ def overfit():
 	out_coarse = overfit_subnet(data_coarse)
 	out_fine = overfit_subnet(data_fine)
 	out = out_coarse * out_fine
-	return mx.symbol.LinearRegressionOutput(data=out, label=label)	
+	return mx.symbol.Group([mx.symbol.LinearRegressionOutput(data=out, label=label), out, out_coarse, out_fine])

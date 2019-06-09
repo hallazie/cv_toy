@@ -5,7 +5,7 @@ def plot_loss():
 	with open('log', 'r') as log:
 		lines = log.readlines()
 		for line in lines:
-			loss = line.split('MAELoss = ')[-1]
+			loss = line.split('mse=')[-1]
 			losses.append(float(loss))
 		plt.plot(losses)
 		plt.show()

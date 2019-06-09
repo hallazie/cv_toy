@@ -84,7 +84,7 @@ class SaliconIter(mx.io.DataIter):
         for _,_,fs in os.walk(self.fine_path):
             for f in fs:
                 t.append(f.split('.')[0])
-        # random.shuffle(t)
+        random.shuffle(t)
         return t
 
     def normalize(self, arr):

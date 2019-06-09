@@ -35,7 +35,7 @@ def train():
 		diter,
 		optimizer = 'adam',
 		optimizer_params = {'learning_rate':1e-3},
-		eval_metric = 'loss',
+		eval_metric = 'mse',
 		batch_end_callback = mx.callback.Speedometer(BATCH_SIZE, 1),
 		epoch_end_callback = mx.callback.do_checkpoint(MODEL_PREFIX, 1),
 		num_epoch = EPOCHES,
