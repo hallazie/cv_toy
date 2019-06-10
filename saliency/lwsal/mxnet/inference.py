@@ -55,7 +55,7 @@ def squeez(arr):
 def test_mit300():
 	diter = SaliconIter(FINE_PATH, COARSE_PATH, LABEL_PATH, 48)
 	symbol = net()
-	_, arg_params, aux_params = mx.model.load_checkpoint('params/lwsp', 30)
+	_, arg_params, aux_params = mx.model.load_checkpoint('params/lwsp', 47)
 	mod = mx.mod.Module(symbol=symbol, context=mx.gpu(0), data_names=('fine', 'coarse'), label_names=None)
 	mod.bind(for_training=False, data_shapes=[('fine', (1,3,80,80)), ('coarse', (1,3,80,80))], label_shapes=mod._label_shapes)
 	mod.set_params(arg_params, aux_params, allow_missing=True)
@@ -63,7 +63,7 @@ def test_mit300():
 	dpath = 'E:/data/saliency/MIT300/BenchmarkIMAGES'
 	# for _,_,fs in os.walk('E:/data/saliency/MIT300/BenchmarkIMAGES/'):
 	for _,_,fs in os.walk(dpath):
-		for f in fs[:200]:
+		for f in fs[:]:
 			prefix = f.split('.')[0]
 			data_path = os.path.join(dpath, prefix + '.jpg')
 			data_raw = cv2.imread(data_path)
@@ -104,7 +104,7 @@ def test_mit300():
 def inference():
 	diter = SaliconIter(FINE_PATH, COARSE_PATH, LABEL_PATH, 48)
 	symbol = net()
-	_, arg_params, aux_params = mx.model.load_checkpoint('params/lwsp', 33)
+	_, arg_params, aux_params = mx.model.load_checkpoint('params/lwsp', 49)
 	mod = mx.mod.Module(symbol=symbol, context=mx.gpu(0), data_names=('fine', 'coarse'), label_names=None)
 	mod.bind(for_training=False, data_shapes=[('fine', (1,3,80,80)), ('coarse', (1,3,80,80))], label_shapes=mod._label_shapes)
 	mod.set_params(arg_params, aux_params, allow_missing=True)
