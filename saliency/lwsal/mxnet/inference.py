@@ -59,13 +59,13 @@ def test_mit300():
 	mod = mx.mod.Module(symbol=symbol, context=mx.gpu(0), data_names=('fine', 'coarse'), label_names=None)
 	mod.bind(for_training=False, data_shapes=[('fine', (1,3,80,80)), ('coarse', (1,3,80,80))], label_shapes=mod._label_shapes)
 	mod.set_params(arg_params, aux_params, allow_missing=True)
-	dpath = 'E:/data/saliency/MIT1003/ALLSTIMULI'
-	# dpath = 'E:/data/saliency/MIT300/BenchmarkIMAGES'
+	# dpath = 'E:/data/saliency/MIT1003/ALLSTIMULI'
+	dpath = 'E:/data/saliency/MIT300/BenchmarkIMAGES'
 	# for _,_,fs in os.walk('E:/data/saliency/MIT300/BenchmarkIMAGES/'):
 	for _,_,fs in os.walk(dpath):
-		for f in fs[:500]:
+		for f in fs[:100]:
 			prefix = f.split('.')[0]
-			data_path = os.path.join(dpath, prefix + '.jpeg')
+			data_path = os.path.join(dpath, prefix + '.jpg')
 			data_raw = cv2.imread(data_path)
 			h_raw, w_raw, c  = data_raw.shape
 			h_new, w_new = int(round(h_raw / 80) * 80), int(round(w_raw / 80) * 80)
@@ -95,11 +95,11 @@ def test_mit300():
 			res = cv2.resize(res, (w_raw, h_raw), interpolation=cv2.INTER_LANCZOS4)
 			res = cv2.blur(res, (25, 25))
 			res = normalize_255(res)
-			cv2.imwrite(os.path.join('output/mit1003', prefix + '_mx.jpg'), res.astype(np.uint8))
+			cv2.imwrite(os.path.join('output/mit300', prefix + '_mx.jpg'), res.astype(np.uint8))
 			# cv2.imwrite(os.path.join('output', prefix + '_mx.jpg'), cv2.resize(res.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 			# cv2.imwrite(os.path.join('output', prefix + '_coarse.jpg'), cv2.resize(res_c.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 			# cv2.imwrite(os.path.join('output', prefix + '_fine.jpg'), cv2.resize(res_f.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
-			cv2.imwrite(os.path.join('output/mit1003', prefix + '_rw.jpg'), data_raw)	
+			cv2.imwrite(os.path.join('output/mit300', prefix + '_rw.jpg'), data_raw)	
 
 def inference():
 	diter = SaliconIter(FINE_PATH, COARSE_PATH, LABEL_PATH, 48)
