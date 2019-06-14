@@ -3,12 +3,14 @@
 
 import tensorflow as tf
 import numpy as np
-
 import cv2
 
 from tqdm import tqdm
+
 from model import *
 from dataiter import *
+import config as cfg
+import utils
 
 def train():
 	data = tf.placeholder(dtype=tf.float32, name='data')
