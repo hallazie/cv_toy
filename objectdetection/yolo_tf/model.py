@@ -7,26 +7,26 @@ import numpy as np
 # import util
 
 class PalletNet(object):
-	def __init__(self, data, train):
+	def __init__(self, data, label, trainable, thresh_grth, thresh_ignr):
 		self.data = data
-		self.train = train
-		self.anchors = util.get_anchor()
-
-		self.cv_box = self.build_network(self.data)
-		self.bd_box = self.decode(self.cv_box, self.anchors)
-		
+		self.label = label
+		self.trainable = trainable
+		self.thresh_grth = thresh_grth
+		self.thresh_ignr = thresh_ignr
 
 	def backbone(self, tensor):
-		tensor = self.conv_block(True, tensor, (3, 3, 3, 32))
-		tensor = self.pool_block(tensor)
-		tensor = self.conv_block(True, tensor, (32, 3, 3, 64))
-		tensor = self.pool_block(tensor)
-		tensor = self.conv_block(True, tensor, (64, 3, 3, 96))
-		tensor = self.pool_block(tensor)
-		tensor = self.conv_block(True, tensor, (96, 3, 3, 128))
-		tensor = self.pool_block(tensor)
-		tensor = self.conv_block(True, tensor, (128, 3, 3, 128))
-		tensor = self.conv_block(True, tensor, (128, 1, 1, 5*3))
+		with tf.variable_scope('backbone', reuse=True):
+			tensor = self.conv_block(True, tensor, (3, 3, 3, 32))
+			tensor = self.pool_block(tensor)
+			tensor = self.conv_block(True, tensor, (32, 3, 3, 64))
+			tensor = self.pool_block(tensor)
+			tensor = self.conv_block(True, tensor, (64, 3, 3, 96))
+			tensor = self.pool_block(tensor)
+			tensor = self.conv_block(True, tensor, (96, 3, 3, 128))
+			tensor = self.pool_block(tensor)
+			tensor = self.conv_block(True, tensor, (128, 3, 3, 128))
+			tensor = self.conv_block(True, tensor, (128, 1, 1, 5))
+			return tensor
 
 	def upsp_block(self, data):
 		num_filter = data.shape.as_list()[-1]
@@ -61,7 +61,7 @@ class PalletNet(object):
 			gamma_initializer=tf.one_initializer(),
 			moving_mean_initializer=tf.zero_initializer(),
 			moving_variance_initializer=tf.one_initializer(),
-			trainable=trainable
+			trainable=self.trainable
 		)
 		tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
 		return tensor
@@ -120,5 +120,22 @@ class PalletNet(object):
 		pred_cf = tf.sigmoid(data_raw_conf)
 		return tf.concat([pred_xy, pred_wh, pred_cf], axis=-1)
 
-	def loss(self):
+	def bbox_giou(self):
 		pass
+
+	def bbox_iou(self):
+		pass
+
+	def loss(self):
+		data = self.backbone(self.data)
+		data_spec = data[:, :, :, :4]
+		data_conf = data[:, :, :, 5:]
+		mask_ignr = data_conf < self.thresh_ignr
+		mask_grth = data_conf > self.thresh_grth
+		conf_ignr = data_conf * mask_ignr
+		conf_grth = data_conf * mask_grth
+		spec_grth = data_spec * mask_grth
+		conf_finl = conf_ignr + conf_grth
+		data_finl = tf.concat([conf_finl, spec_grth], axis=-1)
+		loss_finl = tf.losses.mean_squared_error(labels=self.label, predictions=data_finl)
+		return loss_finl

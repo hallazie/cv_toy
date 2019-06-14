@@ -99,7 +99,7 @@ def test_mit300():
 			# cv2.imwrite(os.path.join('output', prefix + '_mx.jpg'), cv2.resize(res.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 			# cv2.imwrite(os.path.join('output', prefix + '_coarse.jpg'), cv2.resize(res_c.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 			# cv2.imwrite(os.path.join('output', prefix + '_fine.jpg'), cv2.resize(res_f.astype(np.uint8), (640, 480), interpolation=cv2.INTER_LANCZOS4))
-			cv2.imwrite(os.path.join('output/mit300', prefix + '_rw.jpg'), data_raw)	
+			cv2.imwrite(os.path.join('output/mit300', prefix + '_rw.jpg'), data_raw)
 
 def inference():
 	diter = SaliconIter(FINE_PATH, COARSE_PATH, LABEL_PATH, 48)
