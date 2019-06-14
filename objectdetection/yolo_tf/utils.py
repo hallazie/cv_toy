@@ -3,13 +3,17 @@ import os
 import numpy as np
 import math
 
+import config as cfg
+
 def normalize_img(img):
 	return (img - np.min(img)) / float(np.max(img) - np.min(img))
 
 def get_anchor(json_path):
+	# json_path = '/home/xsh/data/amp_label'
 	coords = []
 	for _,_,fs in os.walk(json_path):
 		for f in fs:
+			print('debug: %s' % f)
 			if not f.endswith('.json'):
 				continue
 			with open(json_path+f, 'r') as jfile:
