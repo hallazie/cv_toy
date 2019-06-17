@@ -139,5 +139,5 @@ class PalletNet(object):
 			spec_grth = data_spec * mask_grth
 			conf_finl = conf_ignr + conf_grth
 			data_finl = tf.concat([conf_finl, spec_grth], axis=-1)
-			loss_finl = tf.losses.mean_squared_error(labels=self.label, predictions=data_finl)
+			loss_finl = tf.reduce_mean(tf.reduce_sum(tf.losses.mean_squared_error(labels=self.label, predictions=data_finl)))
 			return loss_finl

@@ -1,0 +1,386 @@
+WARNING:tensorflow:From /usr/local/lib/python2.7/dist-packages/tensorflow/python/framework/op_def_library.py:263: colocate_with (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Colocations handled automatically by placer.
+WARNING:tensorflow:From /home/workspace/cvs/cv_toy/objectdetection/yolo_tf/model.py:90: batch_normalization (from tensorflow.python.layers.normalization) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.batch_normalization instead.
+WARNING:tensorflow:From /usr/local/lib/python2.7/dist-packages/tensorflow/python/ops/losses/losses_impl.py:667: to_float (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+2019-06-17 18:50:43.309086: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+2019-06-17 18:50:44.643096: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x481d050 executing computations on platform CUDA. Devices:
+2019-06-17 18:50:44.643189: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): GeForce RTX 2080, Compute Capability 7.5
+2019-06-17 18:50:44.643213: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (1): GeForce RTX 2080, Compute Capability 7.5
+2019-06-17 18:50:44.643233: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (2): GeForce RTX 2080, Compute Capability 7.5
+2019-06-17 18:50:44.643252: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (3): GeForce RTX 2080, Compute Capability 7.5
+2019-06-17 18:50:44.651735: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500005000 Hz
+2019-06-17 18:50:44.657125: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x4983e10 executing computations on platform Host. Devices:
+2019-06-17 18:50:44.657183: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>
+2019-06-17 18:50:44.657550: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1433] Found device 0 with properties: 
+name: GeForce RTX 2080 major: 7 minor: 5 memoryClockRate(GHz): 1.71
+pciBusID: 0000:02:00.0
+totalMemory: 7.79GiB freeMemory: 7.68GiB
+2019-06-17 18:50:44.657659: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1433] Found device 1 with properties: 
+name: GeForce RTX 2080 major: 7 minor: 5 memoryClockRate(GHz): 1.71
+pciBusID: 0000:03:00.0
+totalMemory: 7.79GiB freeMemory: 7.68GiB
+2019-06-17 18:50:44.657771: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1433] Found device 2 with properties: 
+name: GeForce RTX 2080 major: 7 minor: 5 memoryClockRate(GHz): 1.71
+pciBusID: 0000:82:00.0
+totalMemory: 7.79GiB freeMemory: 7.68GiB
+2019-06-17 18:50:44.657853: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1433] Found device 3 with properties: 
+name: GeForce RTX 2080 major: 7 minor: 5 memoryClockRate(GHz): 1.71
+pciBusID: 0000:83:00.0
+totalMemory: 7.79GiB freeMemory: 7.68GiB
+2019-06-17 18:50:44.658484: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1512] Adding visible gpu devices: 0, 1, 2, 3
+2019-06-17 18:50:44.666126: I tensorflow/core/common_runtime/gpu/gpu_device.cc:984] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-06-17 18:50:44.666172: I tensorflow/core/common_runtime/gpu/gpu_device.cc:990]      0 1 2 3 
+2019-06-17 18:50:44.666192: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1003] 0:   N N N N 
+2019-06-17 18:50:44.666208: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1003] 1:   N N N N 
+2019-06-17 18:50:44.666224: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1003] 2:   N N N N 
+2019-06-17 18:50:44.666239: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1003] 3:   N N N N 
+2019-06-17 18:50:44.666543: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 7467 MB memory) -> physical GPU (device: 0, name: GeForce RTX 2080, pci bus id: 0000:02:00.0, compute capability: 7.5)
+2019-06-17 18:50:44.667114: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:1 with 7467 MB memory) -> physical GPU (device: 1, name: GeForce RTX 2080, pci bus id: 0000:03:00.0, compute capability: 7.5)
+2019-06-17 18:50:44.667626: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:2 with 7467 MB memory) -> physical GPU (device: 2, name: GeForce RTX 2080, pci bus id: 0000:82:00.0, compute capability: 7.5)
+2019-06-17 18:50:44.668170: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1115] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:3 with 7467 MB memory) -> physical GPU (device: 3, name: GeForce RTX 2080, pci bus id: 0000:83:00.0, compute capability: 7.5)
+WARNING:tensorflow:From /usr/local/lib/python2.7/dist-packages/tensorflow/python/ops/math_ops.py:3066: to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+total: 1113, bsize: 128, iters: 8
+var:	<tf.Variable 'palletdetector/backbone/conv1/weight:0' shape=(3, 3, 1, 32) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv1/batch_normalization/gamma:0' shape=(32,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv1/batch_normalization/beta:0' shape=(32,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv2/weight:0' shape=(3, 3, 32, 64) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv2/batch_normalization/gamma:0' shape=(64,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv2/batch_normalization/beta:0' shape=(64,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv3/weight:0' shape=(3, 3, 64, 96) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv3/batch_normalization/gamma:0' shape=(96,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv3/batch_normalization/beta:0' shape=(96,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv4/weight:0' shape=(3, 3, 96, 128) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv4/batch_normalization/gamma:0' shape=(128,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv4/batch_normalization/beta:0' shape=(128,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv5/weight:0' shape=(3, 3, 128, 128) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv5/batch_normalization/gamma:0' shape=(128,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv5/batch_normalization/beta:0' shape=(128,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv6/weight:0' shape=(1, 1, 128, 5) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv6/batch_normalization/gamma:0' shape=(5,) dtype=float32_ref>
+var:	<tf.Variable 'palletdetector/backbone/conv6/batch_normalization/beta:0' shape=(5,) dtype=float32_ref>
+train loss at epoch	0, batch	0: 0.12436046
+train loss at epoch	0, batch	1: 0.00792946
+train loss at epoch	0, batch	2: 0.0065160296
+train loss at epoch	0, batch	3: 0.01732822
+train loss at epoch	0, batch	4: 0.00661097
+train loss at epoch	0, batch	5: 0.005894393
+train loss at epoch	0, batch	6: 0.020484498
+train loss at epoch	0, batch	7: 0.0073229396
+train loss at epoch	1, batch	0: 0.008313167
+train loss at epoch	1, batch	1: 0.012849287
+train loss at epoch	1, batch	2: 0.015324984
+train loss at epoch	1, batch	3: 0.032162722
+train loss at epoch	1, batch	4: 0.012833819
+train loss at epoch	1, batch	5: 0.014884437
+train loss at epoch	1, batch	6: 0.01281423
+train loss at epoch	1, batch	7: 0.0118074175
+train loss at epoch	2, batch	0: 0.010099676
+train loss at epoch	2, batch	1: 0.022451494
+train loss at epoch	2, batch	2: 0.012437523
+train loss at epoch	2, batch	3: 0.009284297
+train loss at epoch	2, batch	4: 0.009216717
+train loss at epoch	2, batch	5: 0.008962912
+train loss at epoch	2, batch	6: 0.008044675
+train loss at epoch	2, batch	7: 0.007216423
+train loss at epoch	3, batch	0: 0.027968872
+train loss at epoch	3, batch	1: 0.007977491
+train loss at epoch	3, batch	2: 0.008009852
+train loss at epoch	3, batch	3: 0.008564148
+train loss at epoch	3, batch	4: 0.007960194
+train loss at epoch	3, batch	5: 0.0076915673
+train loss at epoch	3, batch	6: 0.00714213
+train loss at epoch	3, batch	7: 0.0065908795
+train loss at epoch	4, batch	0: 0.015044645
+train loss at epoch	4, batch	1: 0.011958078
+train loss at epoch	4, batch	2: 0.00983268
+train loss at epoch	4, batch	3: 0.0056770076
+train loss at epoch	4, batch	4: 0.014998601
+train loss at epoch	4, batch	5: 0.006010153
+train loss at epoch	4, batch	6: 0.0057886266
+train loss at epoch	4, batch	7: 0.0053994474
+train loss at epoch	5, batch	0: 0.004909077
+train loss at epoch	5, batch	1: 0.0056516593
+train loss at epoch	5, batch	2: 0.005091471
+train loss at epoch	5, batch	3: 0.004427002
+train loss at epoch	5, batch	4: 0.0049524233
+train loss at epoch	5, batch	5: 0.004778619
+train loss at epoch	5, batch	6: 0.020842636
+train loss at epoch	5, batch	7: 0.004809084
+train loss at epoch	6, batch	0: 0.0061070533
+train loss at epoch	6, batch	1: 0.0060124383
+train loss at epoch	6, batch	2: 0.0064920085
+train loss at epoch	6, batch	3: 0.0057906033
+train loss at epoch	6, batch	4: 0.0061437436
+train loss at epoch	6, batch	5: 0.006016509
+train loss at epoch	6, batch	6: 0.0061435606
+train loss at epoch	6, batch	7: 0.0050451607
+train loss at epoch	7, batch	0: 0.0051224963
+train loss at epoch	7, batch	1: 0.004663971
+train loss at epoch	7, batch	2: 0.0047857435
+train loss at epoch	7, batch	3: 0.0042216983
+train loss at epoch	7, batch	4: 0.01810464
+train loss at epoch	7, batch	5: 0.0041007623
+train loss at epoch	7, batch	6: 0.004315246
+train loss at epoch	7, batch	7: 0.0043058074
+train loss at epoch	8, batch	0: 0.0038575456
+train loss at epoch	8, batch	1: 0.004033651
+train loss at epoch	8, batch	2: 0.003911525
+train loss at epoch	8, batch	3: 0.0061874962
+train loss at epoch	8, batch	4: 0.0043859133
+train loss at epoch	8, batch	5: 0.0034603418
+train loss at epoch	8, batch	6: 0.005601166
+train loss at epoch	8, batch	7: 0.003887438
+train loss at epoch	9, batch	0: 0.0036897492
+train loss at epoch	9, batch	1: 0.011226405
+train loss at epoch	9, batch	2: 0.0035643072
+train loss at epoch	9, batch	3: 0.0035574539
+train loss at epoch	9, batch	4: 0.003865604
+train loss at epoch	9, batch	5: 0.0036076668
+train loss at epoch	9, batch	6: 0.0038826526
+train loss at epoch	9, batch	7: 0.0038903642
+train loss at epoch	10, batch	0: 0.0038451876
+train loss at epoch	10, batch	1: 0.0036400035
+train loss at epoch	10, batch	2: 0.003378982
+train loss at epoch	10, batch	3: 0.0033604812
+train loss at epoch	10, batch	4: 0.003187779
+train loss at epoch	10, batch	5: 0.0035413716
+train loss at epoch	10, batch	6: 0.005195777
+train loss at epoch	10, batch	7: 0.016019814
+train loss at epoch	11, batch	0: 0.004099978
+train loss at epoch	11, batch	1: 0.0047682007
+train loss at epoch	11, batch	2: 0.00528081
+train loss at epoch	11, batch	3: 0.0053156572
+train loss at epoch	11, batch	4: 0.0052551557
+train loss at epoch	11, batch	5: 0.0047426433
+train loss at epoch	11, batch	6: 0.004602704
+train loss at epoch	11, batch	7: 0.0052810446
+train loss at epoch	12, batch	0: 0.004903674
+train loss at epoch	12, batch	1: 0.0052747442
+train loss at epoch	12, batch	2: 0.0051491377
+train loss at epoch	12, batch	3: 0.0050433683
+train loss at epoch	12, batch	4: 0.005095263
+train loss at epoch	12, batch	5: 0.004468091
+train loss at epoch	12, batch	6: 0.004273833
+train loss at epoch	12, batch	7: 0.004394045
+train loss at epoch	13, batch	0: 0.004668308
+train loss at epoch	13, batch	1: 0.0043400405
+train loss at epoch	13, batch	2: 0.004270158
+train loss at epoch	13, batch	3: 0.004336016
+train loss at epoch	13, batch	4: 0.0039551375
+train loss at epoch	13, batch	5: 0.0042221094
+train loss at epoch	13, batch	6: 0.0043863305
+train loss at epoch	13, batch	7: 0.0040930845
+train loss at epoch	14, batch	0: 0.0040373984
+train loss at epoch	14, batch	1: 0.0043224846
+train loss at epoch	14, batch	2: 0.004082836
+train loss at epoch	14, batch	3: 0.0038826847
+train loss at epoch	14, batch	4: 0.003965495
+train loss at epoch	14, batch	5: 0.003946811
+train loss at epoch	14, batch	6: 0.0040875766
+train loss at epoch	14, batch	7: 0.0039640847
+train loss at epoch	15, batch	0: 0.0038792882
+train loss at epoch	15, batch	1: 0.003908266
+train loss at epoch	15, batch	2: 0.004075165
+train loss at epoch	15, batch	3: 0.0035988672
+train loss at epoch	15, batch	4: 0.003671164
+train loss at epoch	15, batch	5: 0.003819671
+train loss at epoch	15, batch	6: 0.0035406726
+train loss at epoch	15, batch	7: 0.0070334612
+train loss at epoch	16, batch	0: 0.007426243
+train loss at epoch	16, batch	1: 0.0063159256
+train loss at epoch	16, batch	2: 0.005504395
+train loss at epoch	16, batch	3: 0.0049794107
+train loss at epoch	16, batch	4: 0.0044604638
+train loss at epoch	16, batch	5: 0.004195171
+train loss at epoch	16, batch	6: 0.004588536
+train loss at epoch	16, batch	7: 0.004790421
+train loss at epoch	17, batch	0: 0.0048967972
+train loss at epoch	17, batch	1: 0.004377745
+train loss at epoch	17, batch	2: 0.004617877
+train loss at epoch	17, batch	3: 0.003975015
+train loss at epoch	17, batch	4: 0.0044339336
+train loss at epoch	17, batch	5: 0.0040345048
+train loss at epoch	17, batch	6: 0.003923621
+train loss at epoch	17, batch	7: 0.0040150825
+train loss at epoch	18, batch	0: 0.0040649427
+train loss at epoch	18, batch	1: 0.0037888703
+train loss at epoch	18, batch	2: 0.004157847
+train loss at epoch	18, batch	3: 0.0042338823
+train loss at epoch	18, batch	4: 0.0037419032
+train loss at epoch	18, batch	5: 0.0035783155
+train loss at epoch	18, batch	6: 0.0036146517
+train loss at epoch	18, batch	7: 0.003779073
+train loss at epoch	19, batch	0: 0.0035718149
+train loss at epoch	19, batch	1: 0.004042032
+train loss at epoch	19, batch	2: 0.003419703
+train loss at epoch	19, batch	3: 0.0039169006
+train loss at epoch	19, batch	4: 0.0038204922
+train loss at epoch	19, batch	5: 0.003925215
+train loss at epoch	19, batch	6: 0.0035887612
+train loss at epoch	19, batch	7: 0.0036466415
+train loss at epoch	20, batch	0: 0.003499493
+train loss at epoch	20, batch	1: 0.0034898198
+train loss at epoch	20, batch	2: 0.003924495
+train loss at epoch	20, batch	3: 0.0035340516
+train loss at epoch	20, batch	4: 0.003564438
+train loss at epoch	20, batch	5: 0.0032651005
+train loss at epoch	20, batch	6: 0.0036464303
+train loss at epoch	20, batch	7: 0.0034549495
+train loss at epoch	21, batch	0: 0.0037067898
+train loss at epoch	21, batch	1: 0.0035419853
+train loss at epoch	21, batch	2: 0.003414305
+train loss at epoch	21, batch	3: 0.003537733
+train loss at epoch	21, batch	4: 0.0032857922
+train loss at epoch	21, batch	5: 0.0032022572
+train loss at epoch	21, batch	6: 0.003198565
+train loss at epoch	21, batch	7: 0.003595012
+train loss at epoch	22, batch	0: 0.0033888312
+train loss at epoch	22, batch	1: 0.0032965129
+train loss at epoch	22, batch	2: 0.0034869916
+train loss at epoch	22, batch	3: 0.0034925523
+train loss at epoch	22, batch	4: 0.0032494545
+train loss at epoch	22, batch	5: 0.003174322
+train loss at epoch	22, batch	6: 0.003391659
+train loss at epoch	22, batch	7: 0.003371076
+train loss at epoch	23, batch	0: 0.0033489885
+train loss at epoch	23, batch	1: 0.0030870466
+train loss at epoch	23, batch	2: 0.0035491704
+train loss at epoch	23, batch	3: 0.0035218333
+train loss at epoch	23, batch	4: 0.003110071
+train loss at epoch	23, batch	5: 0.0030447585
+train loss at epoch	23, batch	6: 0.0035333333
+train loss at epoch	23, batch	7: 0.0032890742
+train loss at epoch	24, batch	0: 0.0033974457
+train loss at epoch	24, batch	1: 0.0031959452
+train loss at epoch	24, batch	2: 0.0037008384
+train loss at epoch	24, batch	3: 0.003349798
+train loss at epoch	24, batch	4: 0.0032672144
+train loss at epoch	24, batch	5: 0.0029684189
+train loss at epoch	24, batch	6: 0.0034513215
+train loss at epoch	24, batch	7: 0.0031278597
+train loss at epoch	25, batch	0: 0.0033349227
+train loss at epoch	25, batch	1: 0.0032275731
+train loss at epoch	25, batch	2: 0.0031986162
+train loss at epoch	25, batch	3: 0.0034648317
+train loss at epoch	25, batch	4: 0.0033371958
+train loss at epoch	25, batch	5: 0.0032106638
+train loss at epoch	25, batch	6: 0.0036062214
+train loss at epoch	25, batch	7: 0.0032171025
+train loss at epoch	26, batch	0: 0.0031442437
+train loss at epoch	26, batch	1: 0.003241586
+train loss at epoch	26, batch	2: 0.0030023174
+train loss at epoch	26, batch	3: 0.003595
+train loss at epoch	26, batch	4: 0.0033275331
+train loss at epoch	26, batch	5: 0.0032916649
+train loss at epoch	26, batch	6: 0.0031615715
+train loss at epoch	26, batch	7: 0.0032621948
+train loss at epoch	27, batch	0: 0.003188045
+train loss at epoch	27, batch	1: 0.0031190785
+train loss at epoch	27, batch	2: 0.0033231147
+train loss at epoch	27, batch	3: 0.0032050249
+train loss at epoch	27, batch	4: 0.0031645277
+train loss at epoch	27, batch	5: 0.0031871842
+train loss at epoch	27, batch	6: 0.00355595
+train loss at epoch	27, batch	7: 0.0032258565
+train loss at epoch	28, batch	0: 0.003246685
+train loss at epoch	28, batch	1: 0.0032808746
+train loss at epoch	28, batch	2: 0.0032351855
+train loss at epoch	28, batch	3: 0.0034721391
+train loss at epoch	28, batch	4: 0.0032282134
+train loss at epoch	28, batch	5: 0.0032302523
+train loss at epoch	28, batch	6: 0.002819144
+train loss at epoch	28, batch	7: 0.0033429817
+train loss at epoch	29, batch	0: 0.0033173077
+train loss at epoch	29, batch	1: 0.0031423296
+train loss at epoch	29, batch	2: 0.003297068
+train loss at epoch	29, batch	3: 0.0032180194
+train loss at epoch	29, batch	4: 0.003053793
+train loss at epoch	29, batch	5: 0.0031989203
+train loss at epoch	29, batch	6: 0.0030237706
+train loss at epoch	29, batch	7: 0.0033468907
+train loss at epoch	30, batch	0: 0.0029024568
+train loss at epoch	30, batch	1: 0.0031376225
+train loss at epoch	30, batch	2: 0.003256171
+train loss at epoch	30, batch	3: 0.0033471223
+train loss at epoch	30, batch	4: 0.0031997222
+train loss at epoch	30, batch	5: 0.0032240439
+train loss at epoch	30, batch	6: 0.0033229904
+train loss at epoch	30, batch	7: 0.003130252
+train loss at epoch	31, batch	0: 0.003171355
+train loss at epoch	31, batch	1: 0.0032125555
+train loss at epoch	31, batch	2: 0.0030567225
+train loss at epoch	31, batch	3: 0.003275923
+train loss at epoch	31, batch	4: 0.0032977057
+train loss at epoch	31, batch	5: 0.0033640692
+train loss at epoch	31, batch	6: 0.0031759725
+train loss at epoch	31, batch	7: 0.0029895462
+train loss at epoch	32, batch	0: 0.003238494
+train loss at epoch	32, batch	1: 0.0034889113
+train loss at epoch	32, batch	2: 0.0029840565
+train loss at epoch	32, batch	3: 0.0030486688
+train loss at epoch	32, batch	4: 0.0030125333
+train loss at epoch	32, batch	5: 0.003221193
+train loss at epoch	32, batch	6: 0.0035347834
+train loss at epoch	32, batch	7: 0.002971761
+train loss at epoch	33, batch	0: 0.0030707421
+train loss at epoch	33, batch	1: 0.0031137876
+train loss at epoch	33, batch	2: 0.0032505922
+train loss at epoch	33, batch	3: 0.003258572
+train loss at epoch	33, batch	4: 0.003314593
+train loss at epoch	33, batch	5: 0.0033385009
+train loss at epoch	33, batch	6: 0.0030508675
+train loss at epoch	33, batch	7: 0.003063343
+train loss at epoch	34, batch	0: 0.0033183885
+train loss at epoch	34, batch	1: 0.0030566712
+train loss at epoch	34, batch	2: 0.0032420577
+train loss at epoch	34, batch	3: 0.003176085
+train loss at epoch	34, batch	4: 0.0029685006
+train loss at epoch	34, batch	5: 0.003156508
+train loss at epoch	34, batch	6: 0.0032087388
+train loss at epoch	34, batch	7: 0.0031584634
+train loss at epoch	35, batch	0: 0.0029825412
+train loss at epoch	35, batch	1: 0.0031618173
+train loss at epoch	35, batch	2: 0.0032903713
+train loss at epoch	35, batch	3: 0.0028628393
+train loss at epoch	35, batch	4: 0.0029516406
+train loss at epoch	35, batch	5: 0.0032582944
+train loss at epoch	35, batch	6: 0.0032703874
+train loss at epoch	35, batch	7: 0.0033094324
+train loss at epoch	36, batch	0: 0.0030087212
+train loss at epoch	36, batch	1: 0.0029785442
+train loss at epoch	36, batch	2: 0.0033403246
+train loss at epoch	36, batch	3: 0.0032779714
+train loss at epoch	36, batch	4: 0.003176543
+train loss at epoch	36, batch	5: 0.0032598965
+train loss at epoch	36, batch	6: 0.0029952757
+train loss at epoch	36, batch	7: 0.0031280797
+train loss at epoch	37, batch	0: 0.0033458981
+train loss at epoch	37, batch	1: 0.003439267
+train loss at epoch	37, batch	2: 0.0029372398
+train loss at epoch	37, batch	3: 0.0030606256
+train loss at epoch	37, batch	4: 0.0030169943
+train loss at epoch	37, batch	5: 0.0031652816
+train loss at epoch	37, batch	6: 0.0028240867
+train loss at epoch	37, batch	7: 0.0030273201
+train loss at epoch	38, batch	0: 0.0030699652
+train loss at epoch	38, batch	1: 0.0033841713
+train loss at epoch	38, batch	2: 0.0028079893
+train loss at epoch	38, batch	3: 0.003106082
+train loss at epoch	38, batch	4: 0.0029832078
+train loss at epoch	38, batch	5: 0.0032000188
+train loss at epoch	38, batch	6: 0.0031210175
+train loss at epoch	38, batch	7: 0.0032374526
+train loss at epoch	39, batch	0: 0.002890617
+train loss at epoch	39, batch	1: 0.003097772
+train loss at epoch	39, batch	2: 0.0031850317
+train loss at epoch	39, batch	3: 0.003224678
+train loss at epoch	39, batch	4: 0.0031879263
+train loss at epoch	39, batch	5: 0.0031289195
+train loss at epoch	39, batch	6: 0.00

@@ -26,8 +26,7 @@ class Dataiter(object):
 		return self
 
 	def __next__(self):
-		# with tf.device('/cpu:0'):
-		try:
+		with tf.device('/gpu:0'):
 			batch_image = np.zeros((cfg.BATCHSIZE, cfg.INPUTHEIGHT, cfg.INPUTWIDTH, 1))
 			batch_label = np.zeros((cfg.BATCHSIZE, cfg.INPUTHEIGHT//cfg.DOWNSCALE, cfg.INPUTWIDTH//cfg.DOWNSCALE, 5))
 			if self.batch_done < self.batch_num:
@@ -50,8 +49,6 @@ class Dataiter(object):
 				self.batch_done = 0
 				random.shuffle(self.file_list)
 				raise StopIteration
-		except:
-			traceback.print_exc()
 
 	def next(self):
 		return self.__next__()

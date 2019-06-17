@@ -1,0 +1,5 @@
+model_checkpoint_path: "pallet_39_loss=0.0030.ckpt-39"
+all_model_checkpoint_paths: "pallet_9_loss=0.0039.ckpt-9"
+all_model_checkpoint_paths: "pallet_19_loss=0.0036.ckpt-19"
+all_model_checkpoint_paths: "pallet_29_loss=0.0033.ckpt-29"
+all_model_checkpoint_paths: "pallet_39_loss=0.0030.ckpt-39"
