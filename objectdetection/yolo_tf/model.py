@@ -16,16 +16,16 @@ class PalletNet(object):
 
 	def backbone(self, tensor):
 		with tf.variable_scope('backbone', reuse=True):
-			tensor = self.conv_block(True, tensor, (3, 3, 3, 32), 1)
+			tensor = self.conv_block(True, tensor, (3, 3, 3, 32), 'conv1')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (3, 3, 32, 64), 2)
+			tensor = self.conv_block(True, tensor, (3, 3, 32, 64), 'conv2')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (3, 3, 64, 96), 3)
+			tensor = self.conv_block(True, tensor, (3, 3, 64, 96), 'conv3')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (3, 3, 96, 128), 4)
+			tensor = self.conv_block(True, tensor, (3, 3, 96, 128), 'conv4')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (3, 3, 128, 128), 5)
-			tensor = self.conv_block(True, tensor, (1, 1, 128, 5), 6)
+			tensor = self.conv_block(True, tensor, (3, 3, 128, 128), 'conv5')
+			tensor = self.conv_block(True, tensor, (1, 1, 128, 5), 'conv6')
 			return tensor
 
 	def upsp_block(self, data):
@@ -66,17 +66,16 @@ class PalletNet(object):
 		tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
 		return tensor
 
-	def conv_block(self, trainable, data, filter_shapes, idx, strides=(1,1,1,1), padding='SAME'):
-		with tf.variable_scope('convolution', reuse=tf.AUTO_REUSE):
+	def conv_block(self, trainable, data, filter_shapes, name, strides=(1,1,1,1), padding='SAME'):
+		with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
 			weight = tf.get_variable(
-				name='weight_%s' % idx,
+				name='weight',
 				dtype=tf.float32,
 				trainable=True,
 				shape=filter_shapes,
 				initializer=tf.random_normal_initializer(stddev=0.01)
 			)
 			tensor = tf.nn.conv2d(
-				name='conv_%s' % idx,
 				input=data,
 				filter=weight,
 				strides=strides,
