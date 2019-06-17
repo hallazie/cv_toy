@@ -16,7 +16,7 @@ class PalletNet(object):
 
 	def backbone(self, tensor):
 		with tf.variable_scope('backbone', reuse=True):
-			tensor = self.conv_block(True, tensor, (3, 3, 3, 32), 'conv1')
+			tensor = self.conv_block(True, tensor, (3, 3, 1, 32), 'conv1')
 			tensor = self.pool_block(tensor)
 			tensor = self.conv_block(True, tensor, (3, 3, 32, 64), 'conv2')
 			tensor = self.pool_block(tensor)
@@ -87,7 +87,7 @@ class PalletNet(object):
 				gamma_initializer=tf.ones_initializer(),
 				moving_mean_initializer=tf.zeros_initializer(),
 				moving_variance_initializer=tf.ones_initializer(),
-				trainable=trainable
+				training=trainable
 			)
 			tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
 			return tensor
@@ -131,9 +131,9 @@ class PalletNet(object):
 		with tf.variable_scope('palletdetector', reuse=tf.AUTO_REUSE):
 			data = self.backbone(self.data)
 			data_spec = data[:, :, :, :4]
-			data_conf = data[:, :, :, 5:]
-			mask_ignr = data_conf < self.thresh_ignr
-			mask_grth = data_conf > self.thresh_grth
+			data_conf = data[:, :, :, 4:]
+			mask_ignr = tf.cast(tf.math.less(data_conf, self.thresh_ignr), tf.float32)
+			mask_grth = tf.cast(tf.math.greater(data_conf, self.thresh_grth), tf.float32)
 			conf_ignr = data_conf * mask_ignr
 			conf_grth = data_conf * mask_grth
 			spec_grth = data_spec * mask_grth

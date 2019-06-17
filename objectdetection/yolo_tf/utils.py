@@ -13,7 +13,7 @@ def get_anchor(json_path):
 	coords = []
 	for _,_,fs in os.walk(json_path):
 		for f in fs:
-			print('debug: %s' % f)
+			# print('debug: %s' % f)
 			if not f.endswith('.json'):
 				continue
 			with open(json_path+f, 'r') as jfile:

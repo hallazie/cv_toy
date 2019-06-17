@@ -26,6 +26,13 @@ def train():
 	sess.run(tf.global_variables_initializer())
 	diter = Dataiter()
 	# saver = tf.train.Saver(tf.global_variables(), max_to_keep=10)
+	
+	trainable_list = []
+	for var in tf.trainable_variables():
+		var_name = var.op.name
+		var_mess = str(var_name).split('/')
+		trainable_list.append(var)
+	optimizer = tf.train.AdamOptimizer(1e-3).minimize(symbol, var_list=trainable_list)
 
 	for e in range(cfg.EPOCH):
 		train_loss = []
@@ -34,6 +41,7 @@ def train():
 		# print('EPOCH: %s' % e)
 		for dat in diter:
 			# print(dat.shape)
+			print('average: %s' % np.mean(dat[0]))
 			curr_loss = sess.run([symbol], feed_dict={
 				data		:	dat[0],
 				label		:	dat[1],

@@ -28,21 +28,23 @@ class Dataiter(object):
 	def __next__(self):
 		# with tf.device('/cpu:0'):
 		try:
-			batch_image = np.zeros((cfg.BATCHSIZE, 1, cfg.INPUTHEIGHT, cfg.INPUTWIDTH))
-			batch_label = np.zeros((cfg.BATCHSIZE, 5, cfg.INPUTHEIGHT//cfg.DOWNSCALE, cfg.INPUTWIDTH//cfg.DOWNSCALE))
+			batch_image = np.zeros((cfg.BATCHSIZE, cfg.INPUTHEIGHT, cfg.INPUTWIDTH, 1))
+			batch_label = np.zeros((cfg.BATCHSIZE, cfg.INPUTHEIGHT//cfg.DOWNSCALE, cfg.INPUTWIDTH//cfg.DOWNSCALE, 5))
 			if self.batch_done < self.batch_num:
 				cnt = 0
 				while cnt < cfg.BATCHSIZE:
 					prefix = self.file_list[self.batch_done * cfg.BATCHSIZE + cnt]
 					curr_img = utils.normalize_img(cv2.resize(cv2.imread(os.path.join(cfg.DATAPATH, prefix + '.png'), cv2.IMREAD_GRAYSCALE), (cfg.INPUTWIDTH, cfg.INPUTHEIGHT), interpolation=cv2.INTER_LANCZOS4))
+					curr_img = np.expand_dims(curr_img, -1)
 					batch_image[cnt] = curr_img
 					if prefix in self.json_list:
 						curr_jsn = json.load(open(os.path.join(cfg.DATAPATH, prefix + '.json')))
 						curr_lbl = utils.jbox_2_label((cfg.INPUTWIDTH//cfg.DOWNSCALE, cfg.INPUTHEIGHT//cfg.DOWNSCALE), curr_jsn, self.anchor)
-						batch_label[cnt] = curr_lbl.transpose()
+						batch_label[cnt] = np.swapaxes(curr_lbl, 0, 1)
 					else:
-						batch_label[cnt] = np.zeros((5, cfg.INPUTHEIGHT//cfg.DOWNSCALE, cfg.INPUTWIDTH//cfg.DOWNSCALE))
+						batch_label[cnt] = np.zeros((cfg.INPUTHEIGHT//cfg.DOWNSCALE, cfg.INPUTWIDTH//cfg.DOWNSCALE, 5))
 					cnt += 1
+				self.batch_done += 1
 				return batch_image, batch_label
 			else:
 				self.batch_done = 0
