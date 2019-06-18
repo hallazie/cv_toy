@@ -3,8 +3,16 @@ import os
 import numpy as np
 import math
 
-def normalize_img(img):
-	return (img - np.min(img)) / float(np.max(img) - np.min(img))
+import config as cfg
+
+def normalize_img(arr):
+	return (arr - np.min(arr)) / float(np.max(arr) - np.min(arr))
+
+def normalize_255(arr):
+	if np.min(arr == np.max(arr)):
+		return np.clip(255 * (arr - np.min(arr)) / float(np.max(arr) - np.min(arr) + 1e-7), 0, 255)
+	else:
+		return np.clip(255 * (arr - np.min(arr)) / float(np.max(arr) - np.min(arr)), 0, 255)
 
 def get_anchor(json_path):
 	coords = []

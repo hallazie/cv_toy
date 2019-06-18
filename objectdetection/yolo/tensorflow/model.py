@@ -16,16 +16,16 @@ class PalletNet(object):
 
 	def backbone(self, tensor):
 		with tf.variable_scope('backbone', reuse=True):
-			tensor = self.conv_block(True, tensor, (3, 3, 3, 32))
+			tensor = self.conv_block(True, tensor, (3, 3, 1, 32), 'conv1')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (32, 3, 3, 64))
+			tensor = self.conv_block(True, tensor, (3, 3, 32, 64), 'conv2')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (64, 3, 3, 96))
+			tensor = self.conv_block(True, tensor, (3, 3, 64, 96), 'conv3')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (96, 3, 3, 128))
+			tensor = self.conv_block(True, tensor, (3, 3, 96, 128), 'conv4')
 			tensor = self.pool_block(tensor)
-			tensor = self.conv_block(True, tensor, (128, 3, 3, 128))
-			tensor = self.conv_block(True, tensor, (128, 1, 1, 5))
+			tensor = self.conv_block(True, tensor, (3, 3, 128, 128), 'conv5')
+			tensor = self.conv_block(True, tensor, (1, 1, 128, 5), 'conv6')
 			return tensor
 
 	def upsp_block(self, data):
@@ -40,9 +40,9 @@ class PalletNet(object):
 		)
 		return tensor
 
-	def decv_block(self, trainable, data, filter_shapes, output_shape, strides):
+	def decv_block(self, trainable, data, filter_shapes, output_shape, strides, idx):
 		weight = tf.get_variable(
-			name='weight',
+			name='weight_%s' % idx,
 			dtype=tf.float32,
 			trainable=True,
 			shape=filter_shapes,
@@ -57,39 +57,40 @@ class PalletNet(object):
 		)
 		tensor = tf.layers.batch_normalization(
 			tensor,
-			beta_initializer=tf.zero_initializer(),
-			gamma_initializer=tf.one_initializer(),
-			moving_mean_initializer=tf.zero_initializer(),
-			moving_variance_initializer=tf.one_initializer(),
+			beta_initializer=tf.zeros_initializer(),
+			gamma_initializer=tf.ones_initializer(),
+			moving_mean_initializer=tf.zeros_initializer(),
+			moving_variance_initializer=tf.ones_initializer(),
 			trainable=self.trainable
 		)
 		tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
 		return tensor
 
-	def conv_block(self, trainable, data, filter_shapes, strides=(1,1,1,1), padding='SAME'):
-		weight = tf.get_variable(
-			name='weight',
-			dtype=tf.float32,
-			trainable=True,
-			shape=filter_shapes,
-			initializer=tf.random_normal_initializer(stddev=0.01)
-		)
-		tensor = tf.nn.conv2d(
-			input=data,
-			filter=weight,
-			strides=strides,
-			padding=padding
-		)
-		tensor = tf.layers.batch_normalization(
-			tensor,
-			beta_initializer=tf.zero_initializer(),
-			gamma_initializer=tf.one_initializer(),
-			moving_mean_initializer=tf.zero_initializer(),
-			moving_variance_initializer=tf.one_initializer(),
-			trainable=trainable
-		)
-		tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
-		return tensor
+	def conv_block(self, trainable, data, filter_shapes, name, strides=(1,1,1,1), padding='SAME'):
+		with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
+			weight = tf.get_variable(
+				name='weight',
+				dtype=tf.float32,
+				trainable=True,
+				shape=filter_shapes,
+				initializer=tf.random_normal_initializer(stddev=0.01)
+			)
+			tensor = tf.nn.conv2d(
+				input=data,
+				filter=weight,
+				strides=strides,
+				padding=padding
+			)
+			tensor = tf.layers.batch_normalization(
+				tensor,
+				beta_initializer=tf.zeros_initializer(),
+				gamma_initializer=tf.ones_initializer(),
+				moving_mean_initializer=tf.zeros_initializer(),
+				moving_variance_initializer=tf.ones_initializer(),
+				training=trainable
+			)
+			tensor = tf.nn.leaky_relu(tensor, alpha=0.1)
+			return tensor
 
 	def pool_block(self, data):
 		return tf.nn.max_pool(data, (1,2,2,1), (1,2,2,1), 'VALID')
@@ -127,15 +128,16 @@ class PalletNet(object):
 		pass
 
 	def loss(self):
-		data = self.backbone(self.data)
-		data_spec = data[:, :, :, :4]
-		data_conf = data[:, :, :, 5:]
-		mask_ignr = data_conf < self.thresh_ignr
-		mask_grth = data_conf > self.thresh_grth
-		conf_ignr = data_conf * mask_ignr
-		conf_grth = data_conf * mask_grth
-		spec_grth = data_spec * mask_grth
-		conf_finl = conf_ignr + conf_grth
-		data_finl = tf.concat([conf_finl, spec_grth], axis=-1)
-		loss_finl = tf.losses.mean_squared_error(labels=self.label, predictions=data_finl)
-		return loss_finl
+		with tf.variable_scope('palletdetector', reuse=tf.AUTO_REUSE):
+			data = self.backbone(self.data)
+			data_spec = data[:, :, :, :4]
+			data_conf = data[:, :, :, 4:]
+			mask_ignr = tf.cast(tf.math.less(data_conf, self.thresh_ignr), tf.float32)
+			mask_grth = tf.cast(tf.math.greater(data_conf, self.thresh_grth), tf.float32)
+			conf_ignr = data_conf * mask_ignr
+			conf_grth = data_conf * mask_grth
+			spec_grth = data_spec * mask_grth
+			conf_finl = conf_ignr + conf_grth
+			data_finl = tf.concat([conf_finl, spec_grth], axis=-1)
+			loss_finl = tf.reduce_mean(tf.reduce_sum(tf.losses.mean_squared_error(labels=self.label, predictions=data_finl)))
+			return loss_finl, data_finl

@@ -1,0 +1,7 @@
+DATAPATH = '/home/data/amp_label/'
+LABELPATH = '/home/data/amp_label/'
+INPUTWIDTH = 224
+INPUTHEIGHT = 172
+DOWNSCALE = 16
+BATCHSIZE = 128
+EPOCH = 50000
