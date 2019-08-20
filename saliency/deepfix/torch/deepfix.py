@@ -12,16 +12,7 @@ from torch.autograd import Variable
 
 from model import *
 from dataiter import *
-
-logger_name = 'train_logger'
-logger = logging.getLogger(logger_name)
-
-DATA_PATH = ''
-LABEL_PATH = ''
-PARAM_PATH = ''
-BATCH_SIZE = 32
-EPOCHES = 1000
-GRAD_ACCUM = 1
+from config import *
 
 def get_logger():
 	logger.setLevel(logging.INFO)
@@ -51,14 +42,14 @@ def train():
 		for batch_i, (data_batch, label_batch) in enumerate(dataloader):
 			batch_done = len(dataloader) * e + batch_i
 			data_batch = Variable(data_batch.to(device))
-			label_batch = Variable(labels.to(device), requires_grad=False)
-			loss= model(data_batch, label_batch)
+			label_batch = Variable(label_batch.to(device), requires_grad=False)
+			loss= model(data_batch.float(), label_batch.float())
 			logger.info('epoch %s, batch %s, EucLoss = %s' % (e, batch_i, loss.data.item()))
 			loss.backward()
-			if True:
+			if GRAD_ACCUM:
 				optimizer.step()
 				optimizer.zero_grad()
-		if True:
+		if e%SAVE_STEP==0 and e!=0:
 			torch.save(model, os.path.join(PARAM_PATH, 'model_%s.pkl' % (e + 1)))
 
 
