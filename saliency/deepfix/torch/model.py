@@ -85,19 +85,16 @@ class Model(nn.Module):
 		self.biasconv1 = self.Conv(528, 512, 5, 12, 6)
 		self.biasconv2 = self.Conv(528, 512, 5, 12, 6)
 		self.output = self.Conv(512, 1, 1, 0)
-		self.loss = self.EucLoss()
+		# self.loss = self.EucLoss()
 
-	def forward(self, batch_data, batch_label):
+	def forward(self, batch_data):
 		x = self.backbone(batch_data)
-		logger.info(x.shape)
-		logger.info(self.bias.shape)
 		x = torch.cat([x, self.bias], 1)
 		x = self.biasconv1(x)
-		logger.info(x.shape)
 		x = torch.cat([x, self.bias], 1)
 		x = self.biasconv2(x)
 		x = self.output(x)
-		x = self.loss(x, batch_label)
+		# x = self.loss(x, batch_label)
 		return x
 
 	def Backbone(self):
