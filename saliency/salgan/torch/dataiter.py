@@ -36,19 +36,14 @@ class SaliconSet(Dataset):
 			curr_data_batch = np.swapaxes(cv2.imread(curr_data_path), 0, 2).astype(np.float32)
 			curr_label_batch = np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (40, 30), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32)
 
-			# curr_data_batch = self.normalize(np.zeros((3, 640, 480)))
-			# curr_label_batch = self.normalize_label(np.zeros((1,40,30)))
-			curr_data_batch = self.normalize(curr_data_batch)
-			curr_label_batch = self.normalize_label(curr_label_batch)
+			curr_data_batch = self.normalize(curr_data_batch, 1.)
+			curr_label_batch = self.normalize(curr_label_batch, 1.)
 			return curr_data_batch, curr_label_batch
 		except Exception as e:
 			traceback.print_exc()
 
-	def normalize(self, arr):
-		return (arr - np.min(arr)) / float(np.max(arr) - np.min(arr) + self.jitter)
-
-	def normalize_label(self, arr):
-		return arr / 255.
+	def normalize(self, arr, size):
+		return float(size) * (arr - np.min(arr)) / float(np.max(arr) - np.min(arr) + self.jitter)
 
 	def __len__(self):
 		return len(self.img_list)
