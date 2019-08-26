@@ -26,3 +26,11 @@ TODO
 ### light-weighted saliency detection
 
 Light weighted saliency detection with effort to reduce both modle size and runtime memory, implemented in Pytorch and MxNet.
+
+### deepfix
+
+VGG16 backbone and inception module + dilation conv at output layers, implemented in Pytorch
+
+### salgan
+
+Generative Adversarial Nets for saliency prediction. Using GANs for saliency prediction is kind of nonesense, but implemented anyway, in Pytorch.

@@ -5,27 +5,12 @@
 import torch
 import torch.optim as optim
 
-import logging
-
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 from model import *
 from dataiter import *
 from config import *
-
-# def get_logger():
-# 	logger.setLevel(logging.INFO)
-# 	log_path = './log.log'
-# 	filehandle = logging.FileHandler(log_path)
-# 	filehandle.setLevel(logging.INFO)
-# 	fmt = '%(asctime)-15s %(levelname)s %(filename)s %(lineno)d %(process)d %(message)s'
-# 	date_fmt = '%a %d %b %Y %H:%M:%S'
-# 	formatter = logging.Formatter(fmt, date_fmt)
-# 	filehandle.setFormatter(formatter)
-# 	logger.addHandler(filehandle)
-
-logger = logging.getLogger(__name__)
 
 def train():
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
