@@ -57,6 +57,7 @@ def Backbone(layer_define):
 
 class Discriminator(nn.Module):
 	def __init__(self, inputwidth, inputheight, batchsize):
+		super(Discriminator, self).__init__()
 		self.layer_define = [
 			('c', 4, 3, 1, 1, 1),
 			('c', 3, 32, 3, 1, 1),
@@ -68,9 +69,9 @@ class Discriminator(nn.Module):
 			('c', 64, 64, 3, 1, 1),
 			('p'),
 			('f'),
-			('l', 100, 'tanh'),
-			('l', 2, 'tanh'),
-			('l', 1, 'sigmoid')
+			('l', 768, 100, 'tanh'),
+			('l', 100, 2, 'tanh'),
+			('l', 2, 1, 'sigmoid')
 		]
 		self.backbone = Backbone(self.layer_define)
 
@@ -80,7 +81,7 @@ class Discriminator(nn.Module):
 
 class Generator(nn.Module):
 	def __init__(self, inputwidth, inputheight, batchsize):
-		super(Model, self).__init__()
+		super(Generator, self).__init__()
 		self.layer_define = [
 			('c', 3, 64, 3, 1, 1),
 			('p'),
@@ -92,13 +93,13 @@ class Generator(nn.Module):
 			('p'),
 			('c', 512, 512, 3, 1, 1),
 			('c', 512, 512, 3, 1, 1),
-			('u'),
+			('u', 2),
 			('c', 512, 256, 3, 1, 1),
-			('u'),
+			('u', 2),
 			('c', 256, 128, 3, 1, 1),
-			('u'),
+			('u', 2),
 			('c', 128, 64, 3, 1, 1),
-			('u'),
+			('u', 2),
 			('c', 64, 1, 3, 1, 1),
 		]
 		self.backbone = Backbone(self.layer_define)
