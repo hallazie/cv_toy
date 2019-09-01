@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger('train_logger')
@@ -15,4 +16,4 @@ WARMUP = 50
 GRAD_ACCUM = 1
 GEN_STEPS = 8
 DIS_STEPS = 8
-ALPHA = 0.005
+ALPHA = 0.5
