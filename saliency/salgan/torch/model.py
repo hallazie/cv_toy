@@ -36,7 +36,7 @@ def Flatten():
 def Linear(inp_size, num_filter, activation):
 	return nn.Sequential(
 		nn.Linear(inp_size, num_filter),
-		nn.BatchNorm2d(1),
+		# nn.BatchNorm1d(1),
 		nn.Sigmoid() if activation=='sigmoid' else nn.Tanh(),
 		)
 
@@ -69,6 +69,7 @@ class Discriminator(nn.Module):
 			('c', 64, 64, 3, 1, 1),
 			('p'),
 			('f'),
+			('l', 49152, 768, 'tanh'),
 			('l', 768, 100, 'tanh'),
 			('l', 100, 2, 'tanh'),
 			('l', 2, 1, 'sigmoid')

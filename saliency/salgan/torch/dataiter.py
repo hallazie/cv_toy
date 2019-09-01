@@ -33,8 +33,8 @@ class SaliconSet(Dataset):
 			curr_data_path = os.path.join(self.data_path, file_name)
 			curr_label_path = os.path.join(self.label_path, file_name.split('.')[0]+'.jpeg')
 
-			curr_data_batch = np.swapaxes(cv2.imread(curr_data_path), 0, 2).astype(np.float32)
-			curr_label_batch = np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (40, 30), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32)
+			curr_data_batch = np.swapaxes(cv2.resize(cv2.imread(curr_data_path), (256, 192), interpolation=cv2.INTER_LANCZOS4), 0, 2).astype(np.float32)
+			curr_label_batch = np.expand_dims(cv2.resize(cv2.imread(curr_label_path), (256, 192), interpolation=cv2.INTER_LANCZOS4)[:,:,0].transpose(), axis=0).astype(np.float32)
 
 			curr_data_batch = self.normalize(curr_data_batch, 1.)
 			curr_label_batch = self.normalize(curr_label_batch, 1.)

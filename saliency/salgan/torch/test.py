@@ -23,11 +23,11 @@ def test(e):
 			if len(file_name) < 8:
 				continue
 			data_path = os.path.join(DATA_PATH, file_name)
-			data_batch = np.swapaxes(cv2.imread(data_path), 0, 2).astype(np.float32)
+			data_batch = np.swapaxes(cv2.resize(cv2.imread(data_path), (256, 192), interpolation=cv2.INTER_LANCZOS4), 0, 2).astype(np.float32)
 			data_batch = np.expand_dims(normalize(data_batch), axis=0)
 			output = generator(torch.tensor(data_batch).to(device)).detach()
 			salmap = normalize_255(np.array(output[0][0].cpu()))
 			cv2.imwrite(OUTPUT_PATH + file_name, cv2.resize(salmap.transpose(), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 
 if __name__ == '__main__':
-	test(400)
+	test(100)
