@@ -26,9 +26,9 @@ def train():
 			pin_memory = True,
 		)
 	criterion_dis = nn.BCELoss()
-	optimizer_dis = optim.Adam(discriminator.parameters(), lr=1e-3)
+	optimizer_dis = optim.Adagrad(discriminator.parameters(), lr=3e-4, weight_decay=1e-4)
 	criterion_gen = nn.BCELoss()
-	optimizer_gen = optim.Adam(generator.parameters(), lr=1e-3)
+	optimizer_gen = optim.Adagrad(generator.parameters(), lr=3e-4, weight_decay=1e-4)
 
 	for e in range(EPOCHES):
 		# first train dis with groundtruth, backward, train dis with fake, backward
@@ -36,34 +36,44 @@ def train():
 		avg_loss_dis, avg_loss_gen = [], []
 		dataloader = iter(rawloader)
 		try:
-			for s in range(DIS_STEPS):
+			if e <= WARMUP:
+				dis_steps = DIS_STEPS + GEN_STEPS
+				gen_steps = 0
+			else:
+				dis_steps = DIS_STEPS
+				gen_steps = GEN_STEPS
+			for s in range(dis_steps):
 				discriminator.zero_grad()
 				data_batch, label_batch  = dataloader.__next__()
 				input_batch = Variable(data_batch).to(device)
-				real_batch = torch.cat((data_batch, label_batch), 1)
-				real_batch = Variable(real_batch).to(device)
-				output_batch_real = discriminator(real_batch.float())
+				input_real_batch = torch.cat((data_batch, label_batch), 1)
+				input_real_batch = Variable(input_real_batch).to(device)
+				output_batch_real = discriminator(input_real_batch)
 				loss_content_real = criterion_dis(output_batch_real, Variable(torch.ones(BATCH_SIZE, 1)).to(device))
-				avg_loss_dis.append(loss_content_real.data.item())
-				loss_content_real.backward()
+				# avg_loss_dis.append(loss_content_real.data.item())
+				# loss_content_real.backward()
 				gen_batch = generator(input_batch).detach()
 				input_fake_batch = torch.cat((input_batch, gen_batch), 1)
+				input_fake_batch = Variable(input_fake_batch).to(device)
 				output_batch_fake = discriminator(input_fake_batch)
 				loss_content_fake = criterion_dis(output_batch_fake, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
-				avg_loss_dis.append(loss_content_fake.data.item())
-				loss_content_fake.backward()
+				# avg_loss_dis.append(loss_content_fake.data.item())
+				# loss_content_fake.backward()
+				loss_dis = loss_content_real + loss_content_fake
+				avg_loss_dis.append(loss_dis.data.item())
+				loss_dis.backward()
 				optimizer_dis.step()
 			logger.info('epoch %s, dis-loss=%s' % (e, float(sum(avg_loss_dis))/len(avg_loss_dis)))
-			for g in range(GEN_STEPS):
+			for g in range(gen_steps):
 				generator.zero_grad()
-				data_batch, _  = dataloader.__next__()
+				data_batch, label_batch  = dataloader.__next__()
 				input_batch = Variable(data_batch).to(device)
 				gen_output = generator(input_batch).detach()
 				input_fake_batch = torch.cat((input_batch, gen_batch), 1)
 				output_batch = discriminator(input_fake_batch)
-				loss_adversarial = criterion_gen(output_batch, Variable(torch.ones(BATCH_SIZE, 1)).to(device))
+				loss_adversarial = criterion_gen(output_batch, label_batch)
 				loss_content = criterion_dis(output_batch, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
-				loss_total = loss_adversarial + ALPHA * loss_content
+				loss_total = ALPHA * loss_adversarial + loss_content
 				avg_loss_gen.append(loss_total.data.item())
 				loss_total.backward()
 				optimizer_dis.step()
@@ -71,6 +81,8 @@ def train():
 			logger.info('epoch %s, gen-loss=%s' % (e, float(sum(avg_loss_gen))/len(avg_loss_gen)))
 		except StopIteration as stoperror:
 			pass
+		except Exception as error:
+			logger.error(error)
 		finally:
 			if e % SAVE_STEP==0 and e!=0:
 				torch.save(generator, os.path.join(PARAM_PATH, 'generator.%s.pkl' % (e)))
