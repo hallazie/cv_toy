@@ -37,46 +37,51 @@ def train():
 		dataloader = iter(rawloader)
 		try:
 			if e <= WARMUP:
-				dis_steps = DIS_STEPS + GEN_STEPS
-				gen_steps = 0
+				for idx, data_batch, label_batch in enumerate(dataloader):
+					generator.zero_grad()
+					data_batch = Variable(data_batch).to(device)
+					label_batch = Variable(label_batch).to(device)
+					output_batch = generator(data_batch).detach()
+					loss = criterion_gen(output_batch, label_batch)
+					avg_loss_gen.append(loss.data.item())
+					loss.backward()
+					optimizer_gen.step()
+				logger.info('epoch %s, warmup-gen-loss=%s' % (e, float(sum(avg_loss_gen))/len(avg_loss_gen)))
 			else:
-				dis_steps = DIS_STEPS
-				gen_steps = GEN_STEPS
-			for s in range(dis_steps):
-				discriminator.zero_grad()
-				data_batch, label_batch  = dataloader.__next__()
-				input_batch = Variable(data_batch).to(device)
-				input_real_batch = torch.cat((data_batch, label_batch), 1)
-				input_real_batch = Variable(input_real_batch).to(device)
-				output_batch_real = discriminator(input_real_batch)
-				loss_content_real = criterion_dis(output_batch_real, Variable(torch.ones(BATCH_SIZE, 1)).to(device))
-				gen_batch = generator(input_batch).detach()
-				input_fake_batch = torch.cat((input_batch, gen_batch), 1)
-				input_fake_batch = Variable(input_fake_batch).to(device)
-				output_batch_fake = discriminator(input_fake_batch)
-				loss_content_fake = criterion_dis(output_batch_fake, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
-				loss_dis = loss_content_real + loss_content_fake
-				avg_loss_dis.append(loss_dis.data.item())
-				loss_dis.backward()
-				optimizer_dis.step()
-			logger.info('epoch %s, dis-loss=%s' % (e, float(sum(avg_loss_dis))/len(avg_loss_dis)))
-			for g in range(gen_steps):
-				generator.zero_grad()
-				data_batch, label_batch  = dataloader.__next__()
-				input_batch = Variable(data_batch).to(device)
-				label_batch = Variable(label_batch).to(device)
-				gen_output = generator(input_batch).detach()
-				gen_input = Variable(gen_output, requires_grad=True).to(device) 
-				# input_fake_batch = torch.cat((input_batch, gen_output), 1)
-				# output_batch = discriminator(input_fake_batch)
-				loss_adversarial = criterion_gen(gen_input, label_batch)
-				# loss_content = criterion_dis(output_batch, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
-				# loss_total = ALPHA * loss_adversarial + loss_content
-				avg_loss_gen.append(loss_adversarial.data.item())
-				loss_adversarial.backward()
-				# optimizer_dis.step()
-				optimizer_gen.step()
-			logger.info('epoch %s, gen-loss=%s' % (e, float(sum(avg_loss_gen))/len(avg_loss_gen)))
+				for s in range(DIS_STEPS):
+					discriminator.zero_grad()
+					data_batch, label_batch  = dataloader.__next__()
+					input_batch = Variable(data_batch).to(device)
+					input_real_batch = torch.cat((data_batch, label_batch), 1)
+					input_real_batch = Variable(input_real_batch).to(device)
+					output_batch_real = discriminator(input_real_batch)
+					loss_content_real = criterion_dis(output_batch_real, Variable(torch.ones(BATCH_SIZE, 1)).to(device))
+					gen_batch = generator(input_batch).detach()
+					input_fake_batch = torch.cat((input_batch, gen_batch), 1)
+					input_fake_batch = Variable(input_fake_batch).to(device)
+					output_batch_fake = discriminator(input_fake_batch)
+					loss_content_fake = criterion_dis(output_batch_fake, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
+					loss_dis = loss_content_real + loss_content_fake
+					avg_loss_dis.append(loss_dis.data.item())
+					loss_dis.backward()
+					optimizer_dis.step()
+				logger.info('epoch %s, dis-loss=%s' % (e, float(sum(avg_loss_dis))/len(avg_loss_dis)))
+				for g in range(GEN_STEPS):
+					generator.zero_grad()
+					data_batch, label_batch  = dataloader.__next__()
+					input_batch = Variable(data_batch).to(device)
+					label_batch = Variable(label_batch).to(device)
+					gen_output = generator(input_batch).detach()
+					dis_input = Variable(gen_output, requires_grad=True).to(device)
+					loss_adversarial = criterion_gen(dis_input, label_batch)
+					input_fake_batch = torch.cat((input_batch, gen_output), 1)
+					output_batch = discriminator(input_fake_batch)
+					loss_content = criterion_dis(output_batch, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
+					loss_total = ALPHA * loss_adversarial + loss_content
+					avg_loss_gen.append(loss_total.data.item())
+					loss_total.backward()
+					optimizer_gen.step()
+				logger.info('epoch %s, gen-loss=%s' % (e, float(sum(avg_loss_gen))/len(avg_loss_gen)))
 		except StopIteration as stoperror:
 			pass
 		except Exception as error:
