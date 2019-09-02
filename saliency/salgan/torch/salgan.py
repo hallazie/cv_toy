@@ -12,7 +12,10 @@ from model import *
 from dataiter import *
 from config import *
 
+import matplotlib.pyplot as plt
 
+def normalize(arr, size):
+	return float(size) * (arr - np.min(arr)) / float(np.max(arr) - np.min(arr) + 1e-10)
 
 def train():
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -26,9 +29,9 @@ def train():
 			pin_memory = True,
 		)
 	criterion_dis = nn.BCELoss()
-	optimizer_dis = optim.Adagrad(discriminator.parameters(), lr=1e-1, weight_decay=1e-4)
+	optimizer_dis = optim.Adagrad(discriminator.parameters(), lr=3e-4, weight_decay=1e-4)
 	criterion_gen = nn.MSELoss()
-	optimizer_gen = optim.Adagrad(generator.parameters(), lr=1e-1, weight_decay=1e-4)
+	optimizer_gen = optim.Adagrad(generator.parameters(), lr=3e-4, weight_decay=1e-4)
 
 	for e in range(EPOCHES):
 		# first train dis with groundtruth, backward, train dis with fake, backward
@@ -37,12 +40,10 @@ def train():
 		dataloader = iter(rawloader)
 		try:
 			if e <= WARMUP:
-				for idx, data_batch, label_batch in enumerate(dataloader):
+				for data_batch, label_batch in dataloader:
 					generator.zero_grad()
-					data_batch = Variable(data_batch).to(device)
-					label_batch = Variable(label_batch).to(device)
-					output_batch = generator(data_batch).detach()
-					loss = criterion_gen(output_batch, label_batch)
+					output_batch = generator(data_batch.to(device))
+					loss = criterion_gen(output_batch, label_batch.to(device))
 					avg_loss_gen.append(loss.data.item())
 					loss.backward()
 					optimizer_gen.step()
@@ -51,14 +52,14 @@ def train():
 				for s in range(DIS_STEPS):
 					discriminator.zero_grad()
 					data_batch, label_batch  = dataloader.__next__()
-					input_batch = Variable(data_batch).to(device)
+					input_batch = data_batch.to(device)
 					input_real_batch = torch.cat((data_batch, label_batch), 1)
-					input_real_batch = Variable(input_real_batch).to(device)
+					input_real_batch = input_real_batch.to(device)
 					output_batch_real = discriminator(input_real_batch)
 					loss_content_real = criterion_dis(output_batch_real, Variable(torch.ones(BATCH_SIZE, 1)).to(device))
-					gen_batch = generator(input_batch).detach()
+					gen_batch = generator(input_batch)
 					input_fake_batch = torch.cat((input_batch, gen_batch), 1)
-					input_fake_batch = Variable(input_fake_batch).to(device)
+					input_fake_batch = input_fake_batch.to(device)
 					output_batch_fake = discriminator(input_fake_batch)
 					loss_content_fake = criterion_dis(output_batch_fake, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
 					loss_dis = loss_content_real + loss_content_fake
@@ -69,11 +70,10 @@ def train():
 				for g in range(GEN_STEPS):
 					generator.zero_grad()
 					data_batch, label_batch  = dataloader.__next__()
-					input_batch = Variable(data_batch).to(device)
-					label_batch = Variable(label_batch).to(device)
-					gen_output = generator(input_batch).detach()
-					dis_input = Variable(gen_output, requires_grad=True).to(device)
-					loss_adversarial = criterion_gen(dis_input, label_batch)
+					input_batch = data_batch.to(device)
+					label_batch = label_batch.to(device)
+					gen_output = generator(input_batch)
+					loss_adversarial = criterion_gen(gen_output, label_batch)
 					input_fake_batch = torch.cat((input_batch, gen_output), 1)
 					output_batch = discriminator(input_fake_batch)
 					loss_content = criterion_dis(output_batch, Variable(torch.zeros(BATCH_SIZE, 1)).to(device))
