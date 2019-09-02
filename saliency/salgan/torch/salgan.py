@@ -30,7 +30,7 @@ def train():
 		)
 	criterion_dis = nn.BCELoss()
 	optimizer_dis = optim.Adagrad(discriminator.parameters(), lr=3e-4, weight_decay=1e-4)
-	criterion_gen = nn.MSELoss()
+	criterion_gen = nn.BCELoss()
 	optimizer_gen = optim.Adagrad(generator.parameters(), lr=3e-4, weight_decay=1e-4)
 
 	for e in range(EPOCHES):

@@ -30,4 +30,4 @@ def test(e):
 			cv2.imwrite(OUTPUT_PATH + file_name, cv2.resize(salmap.transpose(), (640, 480), interpolation=cv2.INTER_LANCZOS4))
 
 if __name__ == '__main__':
-	test(200)
+	test(300)
