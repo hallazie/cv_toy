@@ -19,7 +19,7 @@ def normalize(arr, size):
 
 def train():
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-	generator = Generator(640, 480, BATCH_SIZE).to(device)
+	generator = Generator(256, 192, BATCH_SIZE).to(device)
 	discriminator = Discriminator(256, 192, BATCH_SIZE).to(device)
 	dataset = SaliconSet(DATA_PATH, LABEL_PATH)
 	rawloader = DataLoader(
