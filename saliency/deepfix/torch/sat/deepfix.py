@@ -11,6 +11,7 @@ import numpy as np
 import os
 import cv2
 
+from torchvision.models import vgg16
 from scipy.ndimage.filters import gaussian_filter
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -69,32 +70,42 @@ class InceptionModule(nn.Module):
 class Model(nn.Module):
     def __init__(self, inputwidth=640, inputheight=480, batchsize=1, use_pretrained=False):
         super(Model, self).__init__()
-        self.layer_define = [
-            ('c', 3, 64, 3, 1, 1),
-            ('c', 64, 64, 3, 1, 1),
-            ('p', 3, 2),
-            ('c', 64, 128, 3, 1, 1),
-            ('c', 128, 128, 3, 1, 1),
-            ('p', 3, 2),
-            ('c', 128, 256, 3, 1, 1),
-            ('c', 256, 256, 3, 1, 1),
-            ('c', 256, 256, 3, 1, 1),
-            ('p', 3, 2),
-            ('c', 256, 512, 3, 1, 1),
-            ('c', 512, 512, 3, 1, 1),
-            ('c', 512, 512, 3, 1, 1),
-            ('p', 3, 1),
-            ('i', 512, 512),
-            ('i', 512, 512),
-        ]
+        self.use_pretrained = use_pretrained
+        if self.use_pretrained:
+            self.features = nn.ModuleList(list(vgg16(pretrained=True).features)[:-1])
+            self.layer_define = [
+                ('i', 512, 512),
+                ('i', 512, 512),
+            ]
+        else:
+            self.layer_define = [
+                ('c', 3, 64, 3, 1, 1),
+                ('c', 64, 64, 3, 1, 1),
+                ('p', 3, 2),
+                ('c', 64, 128, 3, 1, 1),
+                ('c', 128, 128, 3, 1, 1),
+                ('p', 3, 2),
+                ('c', 128, 256, 3, 1, 1),
+                ('c', 256, 256, 3, 1, 1),
+                ('c', 256, 256, 3, 1, 1),
+                ('p', 3, 2),
+                ('c', 256, 512, 3, 1, 1),
+                ('c', 512, 512, 3, 1, 1),
+                ('c', 512, 512, 3, 1, 1),
+                ('p', 3, 1),
+                ('i', 512, 512),
+                ('i', 512, 512),
+            ]
         self.bias = init_bias(inputwidth, inputheight, batchsize)
         self.backbone = self.Backbone()
         self.biasconv1 = self.Conv(528, 512, 5, 12, 6)
         self.biasconv2 = self.Conv(528, 512, 5, 12, 6)
         self.output = self.Conv(512, 1, 1, 0)
 
-    def forward(self, batch_data):
-        x = self.backbone(batch_data)
+    def forward(self, x):
+        if self.use_pretrained:
+            x = self.features(x)
+        x = self.backbone(x)
         x = torch.cat([x, self.bias], 1)
         x = self.biasconv1(x)
         x = torch.cat([x, self.bias], 1)
