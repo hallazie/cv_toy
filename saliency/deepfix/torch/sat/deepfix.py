@@ -11,16 +11,22 @@ import numpy as np
 import os
 import cv2
 
+from scipy.ndimage.filters import gaussian_filter
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-BIAS_PATH = ''
-
-def init_bias_from_file(inputwidth, inputheight, batchsize):
+def init_bias(inputwidth, inputheight, batchsize):
     bias = np.zeros((1, 16, inputwidth//16, inputheight//16))
-    for _,_,fs in os.walk(BIAS_PATH):
-        for i, f in enumerate(sorted([x for x in fs if x.endswith('.png')])):
-            t = cv2.imread(os.path.join(BIAS_PATH, f), cv2.IMREAD_GRAYSCALE)
-            bias[0,i,:] = cv2.resize(cv2.imread(os.path.join(BIAS_PATH, f), cv2.IMREAD_GRAYSCALE), (inputwidth//16, inputheight//16), interpolation=cv2.INTER_LANCZOS4).transpose()
+    for i in range(1,5):
+        for j in range(1,5):
+            img = np.zeros((256, 256)).astype(np.float32)
+            img[127, 127] = 255.
+            img[127, 128] = 255.
+            img[128, 127] = 255.
+            img[128, 128] = 255.
+            blur = gaussian_filter(img, sigma=(i*6, j*6))
+            blur = 255. * (blur - np.min(blur)) / (np.max(blur) - np.min(blur))
+            bias[0,i,:] = cv2.resize(blur, (inputwidth//16, inputheight//16), interpolation=cv2.INTER_LANCZOS4).transpose()
     
     return torch.tensor(bias.repeat(batchsize, 0)).float().to(device)
 
@@ -81,7 +87,7 @@ class Model(nn.Module):
             ('i', 512, 512),
             ('i', 512, 512),
         ]
-        self.bias = init_bias_from_file(inputwidth, inputheight, batchsize)
+        self.bias = init_bias(inputwidth, inputheight, batchsize)
         self.backbone = self.Backbone()
         self.biasconv1 = self.Conv(528, 512, 5, 12, 6)
         self.biasconv2 = self.Conv(528, 512, 5, 12, 6)
