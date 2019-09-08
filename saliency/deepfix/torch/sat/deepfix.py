@@ -1,5 +1,5 @@
 '''
-Implementation of MLNet model by Cornia et al.
+Implementation of Deepfix by Kruthiventi et al.
 
 @author: Xiao Shanghua
 '''
@@ -93,6 +93,9 @@ class Model(nn.Module):
                 ('c', 512, 512, 3, 1, 1),
                 ('c', 512, 512, 3, 1, 1),
                 ('p', 3, 1),
+                ('c', 256, 512, 3, 2, 2),
+                ('c', 512, 512, 3, 2, 2),
+                ('c', 512, 512, 3, 2, 2),
                 ('i', 512, 512),
                 ('i', 512, 512),
             ]
