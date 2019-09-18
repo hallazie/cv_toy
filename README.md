@@ -2,6 +2,12 @@
 cv toys / validation on models
 implementation of different models on mxnet (with python or c++ api).
 
+## basic models
+
+### generative adversarial networks for hand writing digits generation
+
+basic GAN for hand writing digits from mnist dataset
+
 ## semantic segmentation
 
 TODO
