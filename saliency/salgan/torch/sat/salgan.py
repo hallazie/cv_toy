@@ -84,9 +84,9 @@ class Discriminator(nn.Module):
 		return x
 
 class Generator(nn.Module):
-	def __init__(self, inputwidth, inputheight, batchsize):
+	def __init__(self, inputwidth, inputheight, batchsize, use_pretrained):
 		super(Generator, self).__init__()
-		self.layer_define = [
+		self.encoder_define = [
 			('c', 3, 64, 3, 1, 1),
 			('p'),
 			('c', 64, 64, 3, 1, 1),
@@ -105,6 +105,8 @@ class Generator(nn.Module):
 			('c', 512, 512, 3, 1, 1),
 			('c', 512, 512, 3, 1, 1),
 			('c', 512, 512, 3, 1, 1),
+		]
+		self.decoder_define = [
 			('u', 2),
 			('c', 512, 512, 3, 1, 1),
 			('c', 512, 512, 3, 1, 1),
@@ -123,21 +125,27 @@ class Generator(nn.Module):
 			('c', 64, 64, 3, 1, 1),
 			('c', 64, 1, 3, 1, 1),
 		]
-		self.backbone = Backbone(self.layer_define)
+		if use_pretrained:
+			self.encoder = nn.ModuleList(list(vgg16(pretrained=True).features)[:-1])
+		else:
+			self.encoder = Backbone(self.encoder_define)
+		self.decoder = Backbone(self.decoder_define)
 		self.sigmoid = nn.Sigmoid()
 
 	def forward(self, batch_data):
-		x = self.backbone(batch_data)
+		x = self.encoder(batch_data)
+		x = self.decoder(x)
 		x = self.sigmoid(x)
 		return x
 
 class Model(nn.Module):
     def __init__(self, inputwidth=640, inputheight=480, batchsize=1, use_pretrained=False):
         super(Model, self).__init__()
-        self.generator = Generator(inputwidth, inputheight, batchsize)
+        self.generator = Generator(inputwidth, inputheight, batchsize, use_pretrained=use_pretrained)
         self.discriminator = Discriminator(inputwidth, inputheight, batchsize)
 
-    def forward(self, x):
-    	gen_out = self.generator(x)
-    	dis_out = self.discriminator(gen_out)
-    	return gen_out, dis_out
+    def forward(self, x, y):
+    	z = self.generator(x)
+    	dis_out_real = self.discriminator(torch.cat((x, y), 1))
+    	dis_out_fake = self.discriminator(torch.cat((z, y), 1))
+    	return z, dis_out_real, dis_out_fake
