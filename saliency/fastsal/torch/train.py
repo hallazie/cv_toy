@@ -22,12 +22,14 @@ device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() e
 torch.device(device)
 
 
-learning_rate = 1e-5
+learning_rate = 1e-3
 
+# mobile sal
 height_dim = 256
 width_dim = 320
 
-ts = (32, 40) # fastsal
+# ts = (32, 40) # fastsal
+ts = (78, 94)  # mobilesal
 
 class TrainSal(object):
 
@@ -125,7 +127,6 @@ class TrainSal(object):
             fix = fix.to(device)
 
             saloutput = self.model(img)
-            #print(saloutput.shape)
             loss1 = self.criterion_nss(saloutput, fix)
             loss2 = self.criterion_kld(saloutput, map)
             loss3 = self.criterion_acc(saloutput, map)
@@ -174,13 +175,12 @@ class TrainSal(object):
 
 
 if __name__ == "__main__":
-
-    folder = '/mnt/Databases/SALICON/'
+    folder = 'E:\\Dataset\\SALICON\\Tiny\\'
     print("Available models: {}".format(MODEL_NAME))
     cfg = ModelConfig()
     cfg.MODEL = MODEL_NAME[7]
-    cfg.B_SIZE = 4
+    cfg.B_SIZE = 8
     print("Training: {}".format(cfg.MODEL))
     model = make_model(cfg)
     model_trainer = TrainSal(model, batch_size=4, num_workers=2, root_folder=folder)
-    model_trainer.train_val_model(10, './model_mobilesal/')
+    model_trainer.train_val_model(5, 'E:\\Dataset\\SALICON\\Tiny\\output\\')
