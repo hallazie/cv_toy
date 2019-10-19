@@ -28,8 +28,8 @@ learning_rate = 1e-3
 height_dim = 256
 width_dim = 320
 
-# ts = (32, 40) # fastsal
-ts = (78, 94)  # mobilesal
+ts = (32, 40) # fastsal
+# ts = (78, 94)  # mobilesal
 
 class TrainSal(object):
 
@@ -130,6 +130,7 @@ class TrainSal(object):
             loss1 = self.criterion_nss(saloutput, fix)
             loss2 = self.criterion_kld(saloutput, map)
             loss3 = self.criterion_acc(saloutput, map)
+            # print('loss1:%s, loss2:%s, loss3:%s' % (loss1, loss2, loss3))
             loss = loss1 + loss2 + loss3
             if torch.isnan(loss):
                 print('\nnan error\n')
@@ -175,12 +176,13 @@ class TrainSal(object):
 
 
 if __name__ == "__main__":
-    folder = 'E:\\Dataset\\SALICON\\Tiny\\'
+    folder = 'E:\\Dataset\\SAL\\'
     print("Available models: {}".format(MODEL_NAME))
     cfg = ModelConfig()
-    cfg.MODEL = MODEL_NAME[7]
-    cfg.B_SIZE = 8
+    # cfg.MODEL = MODEL_NAME[7]
+    cfg.MODEL = 'fastsal'
+    cfg.B_SIZE = 6
     print("Training: {}".format(cfg.MODEL))
     model = make_model(cfg)
-    model_trainer = TrainSal(model, batch_size=4, num_workers=2, root_folder=folder)
-    model_trainer.train_val_model(5, 'E:\\Dataset\\SALICON\\Tiny\\output\\')
+    model_trainer = TrainSal(model, batch_size=6, num_workers=2, root_folder=folder)
+    model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\')

@@ -20,14 +20,14 @@ class InvertedResidual(nn.Module):
         super(InvertedResidual, self).__init__()
         self.use_res = c_in == c_out
         self.conv = nn.Sequential(
-            nn.Conv2d(c_in, exp, kernel_size=1, stride=1, padding=0, groups=1, bias=False),
+            nn.Conv2d(c_in, exp, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(exp),
             nn.ReLU6(inplace=INPLACE),
             nn.Conv2d(exp, exp, kernel_size=3, stride=1, padding=1, groups=exp, bias=False),
             nn.BatchNorm2d(exp),
             nn.ReLU6(inplace=INPLACE),
-            nn.Conv2d(exp, c_out, kernel_size=1, stride=1, padding=0, groups=1, bias=False),
-            nn.BatchNorm2d(c_out),
+            nn.Conv2d(exp, c_out, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.ReLU6(inplace=INPLACE)
         )
 
     def forward(self, x):
@@ -54,6 +54,7 @@ class Model(nn.Module):
     def SubNet(self):
         return nn.Sequential(
             self.Conv(3, 32, 3, 1),
+            self.Conv(32, 32, 3, 1),
             self.Pool('max'),
             InvertedResidual(32, 16, 64),
             InvertedResidual(16, 16, 64),
@@ -69,8 +70,34 @@ class Model(nn.Module):
             InvertedResidual(32, 64, 256),
             InvertedResidual(64, 64, 256),
             InvertedResidual(64, 128, 512),
-            self.Conv(128, 1, 1, 0)
+            InvertedResidual(128, 128, 512),
+            nn.Conv2d(128, 1, kernel_size=1),
+            nn.ReLU6(inplace=INPLACE)
         )
+
+    # def Net(self):
+    #     return nn.Sequential(
+    #         self.Conv(3, 32, 3, 1),
+    #         self.Pool('max'),
+    #         self.Conv(32, 64, 3, 1),
+    #         self.Conv(64, 64, 3, 1),
+    #         self.Pool('max'),
+    #         self.Conv(64, 96, 3, 1),
+    #         self.Conv(96, 96, 3, 1),
+    #         self.Conv(96, 96, 3, 1),
+    #         self.Pool('max'),
+    #         self.Conv(96, 128, 3, 1),
+    #         self.Conv(128, 128, 3, 1),
+    #         self.Conv(128, 128, 3, 1),
+    #         self.Conv(128, 128, 3, 1),
+    #         self.Conv(128, 256, 3, 1),
+    #         self.Conv(256, 256, 3, 1),
+    #         self.Conv(256, 512, 3, 1),
+    #         self.Conv(512, 512, 3, 1),
+    #         # self.Conv(512, 1, 1, 0)
+    #         nn.Conv2d(512, 1, kernel_size=1),
+    #         nn.ReLU6(inplace=INPLACE)
+    #     )
 
     def Conv(self, c_in, c_out, ksize, pad):
         return nn.Sequential(

@@ -94,7 +94,9 @@ class EstimateSaliency(object):
             img1 = torch.unsqueeze(img1, dim=0)
 
             start = time.time()
+            print('img max-min:%s, %s' % (np.max(img1.cpu().detach().numpy()), np.min(img1.cpu().detach().numpy())))
             saloutput = self.model(img1)
+            print('res max-min:%s, %s' % (np.max(saloutput.cpu().detach().numpy()), np.min(saloutput.cpu().detach().numpy())))
             end = time.time()
             time_list.append(end-start)
             saloutput = _normalize_data(saloutput)
@@ -102,10 +104,8 @@ class EstimateSaliency(object):
             saloutput = torch.squeeze(saloutput, 0)
             saloutput = saloutput.cpu().data.numpy()
 
-
             #saloutput = np.squeeze(saloutput, axis=0)
             saloutput = postprocess_predictions(saloutput, orig_w, orig_h)
-            print('max-min:%s, %s' % (np.max(saloutput), np.min(saloutput)))
 
             a = 0.015*min(orig_w, orig_h)
             saloutput = (saloutput - np.min(saloutput)) / (np.max(saloutput) - np.min(saloutput))
@@ -139,16 +139,19 @@ class EstimateSaliency(object):
 #ts = (27, 35) deepfix
 if __name__ == "__main__":
 
-    folder = 'E:\\Dataset\\SALICON\\Tiny\\images\\val\\'
-    res_folder = 'E:\\Dataset\\SALICON\\Tiny\\result\\'
+    folder = 'E:\\Dataset\\SAL\\images\\val\\'
+    res_folder = 'E:\\Dataset\\SAL\\result\\'
 
     modelcfg = ModelConfig()
-    modelcfg.MODEL = MODEL_NAME[7]
+    # modelcfg.MODEL = MODEL_NAME[7]
+    modelcfg.MODEL = 'fastsal'
     modelcfg.H_IN = 256
     modelcfg.W_IN = 320
-    modelcfg.H_OUT = 78
-    modelcfg.W_OUT = 94
+    modelcfg.H_OUT = 32
+    modelcfg.W_OUT = 40
+    # modelcfg.H_OUT = 78
+    # modelcfg.W_OUT = 94
     model_trainer = EstimateSaliency(img_path=folder, model_cfg=modelcfg,
-                                     model_path='E:\\Dataset\\SALICON\\Tiny\\output\\')
+                                     model_path='E:\\Dataset\\SAL\\output\\')
 
     model_trainer.estimate(savefolder=res_folder)
