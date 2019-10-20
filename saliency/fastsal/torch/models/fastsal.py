@@ -42,7 +42,6 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
         self.fine_net = self.SubNet()
-        # self.coarse_net = self.SubNet()
 
     def forward(self, fine_batch):
 
@@ -74,30 +73,6 @@ class Model(nn.Module):
             nn.Conv2d(128, 1, kernel_size=1),
             nn.ReLU6(inplace=INPLACE)
         )
-
-    # def Net(self):
-    #     return nn.Sequential(
-    #         self.Conv(3, 32, 3, 1),
-    #         self.Pool('max'),
-    #         self.Conv(32, 64, 3, 1),
-    #         self.Conv(64, 64, 3, 1),
-    #         self.Pool('max'),
-    #         self.Conv(64, 96, 3, 1),
-    #         self.Conv(96, 96, 3, 1),
-    #         self.Conv(96, 96, 3, 1),
-    #         self.Pool('max'),
-    #         self.Conv(96, 128, 3, 1),
-    #         self.Conv(128, 128, 3, 1),
-    #         self.Conv(128, 128, 3, 1),
-    #         self.Conv(128, 128, 3, 1),
-    #         self.Conv(128, 256, 3, 1),
-    #         self.Conv(256, 256, 3, 1),
-    #         self.Conv(256, 512, 3, 1),
-    #         self.Conv(512, 512, 3, 1),
-    #         # self.Conv(512, 1, 1, 0)
-    #         nn.Conv2d(512, 1, kernel_size=1),
-    #         nn.ReLU6(inplace=INPLACE)
-    #     )
 
     def Conv(self, c_in, c_out, ksize, pad):
         return nn.Sequential(

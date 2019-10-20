@@ -22,7 +22,7 @@ device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() e
 torch.device(device)
 
 
-learning_rate = 1e-3
+learning_rate = 2e-5
 
 # mobile sal
 height_dim = 256
@@ -60,8 +60,8 @@ class TrainSal(object):
                               target_transform=transform_target)
 
         parameters = self.model.parameters()
-        self.optimizer = optim.Adam(parameters, lr=learning_rate,
-                                    weight_decay=0.0001)
+        # self.optimizer = optim.Adam(parameters, lr=learning_rate, weight_decay=0.0001)
+        self.optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.9)
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=1,
                                                               verbose=True)
 
@@ -185,4 +185,4 @@ if __name__ == "__main__":
     print("Training: {}".format(cfg.MODEL))
     model = make_model(cfg)
     model_trainer = TrainSal(model, batch_size=6, num_workers=2, root_folder=folder)
-    model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\')
+    model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\', model_path='E:\\Dataset\\SAL\\output\\fastsal\\checkpoint_256x320.pth.tar')
