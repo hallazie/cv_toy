@@ -50,7 +50,7 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
 
-        self.encode_image = mobilenet_v2(pretrained=True).features
+        self.encode_image = mobilenet_v2(pretrained=False).features
 
         self.decoder1 = MobileScaleUpV2(1280, 640)
         self.decoder2 = MobileScaleUpV2(640, 320)

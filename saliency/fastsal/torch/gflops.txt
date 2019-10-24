@@ -1,0 +1,7 @@
+[deepgaze2]	GFLOPs=23.368G	paramsize=14.0727M
+[mlnet]	GFLOPs=23.5753G	paramsize=14.7363M
+[resnetsal]	GFLOPs=39.1386G	paramsize=68.3738M
+[salicon]	GFLOPs=29.1948G	paramsize=14.034M
+[deepfix]	GFLOPs=26.8544G	paramsize=14.9735M
+[fastsal]	GFLOPs=1.4346G	paramsize=0.3615M
+[mobilesal]	GFLOPs=3.7005G	paramsize=5.7408M

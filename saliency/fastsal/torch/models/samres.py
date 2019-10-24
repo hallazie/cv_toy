@@ -66,7 +66,7 @@ class Model(nn.Module):
         self.w = W
         self.h = H
 
-        self.features = nn.Sequential(*list(resnet50(pretrained=True).children())[:-2])
+        self.features = nn.Sequential(*list(resnet50(pretrained=False).children())[:-2])
         self.dreduc = nn.Sequential(
             nn.Conv2d(2048, 512, kernel_size=3, stride=1),
             nn.ReLU(inplace=True)

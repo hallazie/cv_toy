@@ -17,7 +17,7 @@ class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
 
-        self.features = nn.Sequential(*list(vgg16(pretrained=True).features.children())[:-2])
+        self.features = nn.Sequential(*list(vgg16(pretrained=False).features.children())[:-2])
         self.decoder = nn.Sequential(nn.Conv2d(1024, 1, kernel_size=1, stride=1, padding=0),
                                      nn.ReLU(inplace=True))
 

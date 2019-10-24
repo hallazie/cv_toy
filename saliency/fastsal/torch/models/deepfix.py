@@ -79,8 +79,8 @@ class Model(nn.Module):
         self.features = self.backbone()
         self.output = nn.Sequential(nn.Conv2d(512, 1, 1, 1), nn.ReLU(inplace=True))
         self.reg = nn.Dropout(p=0.5)
-        state_dict = load_state_dict_from_url('https://download.pytorch.org/models/vgg16-397923af.pth')
-        self.load_state_dict(state_dict, strict=False)
+        # state_dict = load_state_dict_from_url('https://download.pytorch.org/models/vgg16-397923af.pth')
+        # self.load_state_dict(state_dict, strict=False)
 
     def forward(self, x):
         x = self.features(x)
