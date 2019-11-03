@@ -65,12 +65,36 @@ class Model(nn.Module):
             InvertedResidual(24, 32, 128),
             InvertedResidual(32, 32, 128),
             InvertedResidual(32, 32, 128),
-            InvertedResidual(32, 32, 128),
             InvertedResidual(32, 64, 256),
+            InvertedResidual(64, 64, 256),
             InvertedResidual(64, 64, 256),
             InvertedResidual(64, 128, 512),
             InvertedResidual(128, 128, 512),
             nn.Conv2d(128, 1, kernel_size=1),
+            nn.ReLU6(inplace=INPLACE)
+        )
+
+    def ConvNet(self):
+        return nn.Sequential(
+            self.Conv(3, 32, 3, 1),
+            self.Conv(32, 32, 3, 1),
+            self.Pool('max'),
+            self.Conv(32, 64, 3, 1),
+            self.Conv(64, 64, 3, 1),
+            self.Pool('max'),
+            self.Conv(64, 96, 3, 1),
+            self.Conv(96, 96, 3, 1),
+            self.Conv(96, 96, 3, 1),
+            self.Pool('max'),
+            self.Conv(96, 128, 3, 1),
+            self.Conv(128, 128, 3, 1),
+            self.Conv(128, 128, 3, 1),
+            self.Conv(128, 256, 3, 1),
+            self.Conv(256, 256, 3, 1),
+            self.Conv(256, 256, 3, 1),
+            self.Conv(256, 512, 3, 1),
+            self.Conv(512, 512, 3, 1),
+            nn.Conv2d(512, 1, kernel_size=1),
             nn.ReLU6(inplace=INPLACE)
         )
 

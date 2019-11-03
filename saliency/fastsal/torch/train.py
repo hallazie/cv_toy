@@ -10,6 +10,7 @@ import sys
 import shutil
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 
@@ -22,13 +23,14 @@ device = torch.device(torch.cuda.current_device() if torch.cuda.is_available() e
 torch.device(device)
 
 
-learning_rate = 2e-5
+learning_rate = 1e-5
 
 # mobile sal
 height_dim = 256
 width_dim = 320
 
-ts = (32, 40) # fastsal
+# ts = (32, 40) # fastsal
+ts = (64, 80) # resnet sal
 # ts = (78, 94)  # mobilesal
 
 class TrainSal(object):
@@ -60,14 +62,15 @@ class TrainSal(object):
                               target_transform=transform_target)
 
         parameters = self.model.parameters()
-        # self.optimizer = optim.Adam(parameters, lr=learning_rate, weight_decay=0.0001)
-        self.optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.9)
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=1,
+        self.optimizer = optim.Adam(parameters, lr=learning_rate, weight_decay=0.0001)
+        # self.optimizer = optim.SGD(parameters, lr=learning_rate, momentum=0.9)
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.2, patience=1,
                                                               verbose=True)
 
         self.criterion_nss = ANSSLoss().to(device)
         self.criterion_kld = KLLoss().to(device)
         self.criterion_acc = ACCLoss().to(device)
+        self.criterion_mse = nn.MSELoss()
 
     def load_checkpoint(self, model_path):
         # support densenet and pytorch 0.4 added
@@ -130,6 +133,7 @@ class TrainSal(object):
             loss1 = self.criterion_nss(saloutput, fix)
             loss2 = self.criterion_kld(saloutput, map)
             loss3 = self.criterion_acc(saloutput, map)
+            # loss4 = self.criterion_mse(saloutput, map)
             # print('loss1:%s, loss2:%s, loss3:%s' % (loss1, loss2, loss3))
             loss = loss1 + loss2 + loss3
             if torch.isnan(loss):
@@ -144,7 +148,7 @@ class TrainSal(object):
             with torch.no_grad():
                 running_loss += loss.item()
 
-            sys.stdout.write("\rEpoch %d -- %s %.01f%% -- Loss: %.03f\n" %
+            sys.stdout.write("\rEpoch %d -- %s %.01f%% -- Loss: %.08f\n" %
                             (epoch+1, fold, (it + 1) / len(dbl) * 100, (running_loss / ((it + 1)*self.batch_size))))
             sys.stdout.flush()
 
@@ -179,10 +183,11 @@ if __name__ == "__main__":
     folder = 'E:\\Dataset\\SAL\\'
     print("Available models: {}".format(MODEL_NAME))
     cfg = ModelConfig()
-    # cfg.MODEL = MODEL_NAME[7]
-    cfg.MODEL = 'fastsal'
-    cfg.B_SIZE = 6
+    cfg.MODEL = MODEL_NAME[2]
+    # cfg.MODEL = 'fastsal'
+    cfg.B_SIZE = 1
     print("Training: {}".format(cfg.MODEL))
     model = make_model(cfg)
-    model_trainer = TrainSal(model, batch_size=6, num_workers=2, root_folder=folder)
-    model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\', model_path='E:\\Dataset\\SAL\\output\\fastsal\\checkpoint_256x320.pth.tar')
+    model_trainer = TrainSal(model, batch_size=1, num_workers=2, root_folder=folder)
+    # model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\', model_path='E:\\Dataset\\SAL\\output\\resnetsal\\checkpoint_256x320.pth.tar')
+    model_trainer.train_val_model(100, 'E:\\Dataset\\SAL\\output\\')
