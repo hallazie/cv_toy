@@ -13,103 +13,107 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.resnetsal import Model as ResNetSal
 from torch.autograd import Variable
 from torchvision import datasets, transforms
 from thop import profile
 
-# Prune settings
-parser = argparse.ArgumentParser(description='PyTorch Slimming CIFAR prune')
-parser.add_argument('--dataset', type=str, default='cifar10',
-                    help='training dataset (default: cifar10)')
-parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
-                    help='input batch size for testing (default: 64)')
-parser.add_argument('--no-cuda', action='store_true', default=False,
-                    help='disables CUDA training')
-parser.add_argument('--depth', type=int, default=110,
-                    help='depth of the resnet')
-parser.add_argument('--model', default='', type=str, metavar='PATH',
-                    help='path to the model (default: none)')
-parser.add_argument('--save', default='', type=str, metavar='PATH',
-                    help='path to save pruned model (default: none)')
-parser.add_argument('-v', default='A', type=str, 
-                    help='version of the model')
 
-args = parser.parse_args()
-args.cuda = not args.no_cuda and torch.cuda.is_available()
+CUDA = torch.cuda.is_available()
+PRUNE_SAVE_PATH = '.'
+CHECKPOINT_PATH = 'E:\\Dataset\\SAL\\output\\resnetsal'
 
-if not os.path.exists(args.save):
-    os.makedirs(args.save)
+class _ScaleUp(nn.Module):
 
-model = resnet(depth=args.depth, dataset=args.dataset)
+    def __init__(self, in_size, out_size):
+        super(_ScaleUp, self).__init__()
 
-if args.cuda:
-    model.cuda()
-if args.model:
-    if os.path.isfile(args.model):
-        print("=> loading checkpoint '{}'".format(args.model))
-        checkpoint = torch.load(args.model)
-        args.start_epoch = checkpoint['epoch']
-        best_prec1 = checkpoint['best_prec1']
-        model.load_state_dict(checkpoint['state_dict'])
-        print("=> loaded checkpoint '{}' (epoch {}) Prec1: {:f}"
-              .format(args.model, checkpoint['epoch'], best_prec1))
-    else:
-        print("=> no checkpoint found at '{}'".format(args.resume))
+        self.up = nn.Sequential(
+            nn.ConvTranspose2d(in_size, in_size, kernel_size=2, stride=2),
+            nn.BatchNorm2d(in_size),
+            nn.LeakyReLU(inplace=True))
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_size, out_size, kernel_size=3, stride=1, padding=2, dilation=2),
+            nn.BatchNorm2d(out_size),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(out_size, out_size, kernel_size=1, stride=1),
+            nn.LeakyReLU(inplace=True),
+        )
 
-print('Pre-processing Successful!')
+        self.__init_weights__()
 
-# simple test model after Pre-processing prune (simple set BN scales to zeros)
-def test(model):
-    kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
-    if args.dataset == 'cifar10':
-        test_loader = torch.utils.data.DataLoader(
-            datasets.CIFAR10('./data.cifar10', train=False, transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])),
-            batch_size=args.test_batch_size, shuffle=False, **kwargs)
-    elif args.dataset == 'cifar100':
-        test_loader = torch.utils.data.DataLoader(
-            datasets.CIFAR100('./data.cifar100', train=False, transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])),
-            batch_size=args.test_batch_size, shuffle=False, **kwargs)
-    else:
-        raise ValueError("No valid dataset is given.")
-    model.eval()
-    correct = 0
-    for data, target in test_loader:
-        if args.cuda:
-            data, target = data.cuda(), target.cuda()
-        data, target = Variable(data, volatile=True), Variable(target)
-        output = model(data)
-        pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+    def __init_weights__(self):
 
-    print('\nTest set: Accuracy: {}/{} ({:.1f}%)\n'.format(
-        correct, len(test_loader.dataset), 100. * correct / len(test_loader.dataset)))
-    return correct / float(len(test_loader.dataset))
+        nn.init.kaiming_normal_(self.conv[0].weight)
+        nn.init.constant_(self.conv[0].bias, 0.0)
+        nn.init.kaiming_normal_(self.conv[3].weight)
+        nn.init.constant_(self.conv[3].bias, 0.0)
+
+        nn.init.kaiming_normal_(self.up[0].weight)
+        nn.init.constant_(self.up[0].bias, 0.0)
+
+    def forward(self, inputs):
+        output = self.up(inputs)
+        output = self.conv(output)
+        return output
+
+
+class ResNetSal(nn.Module):
+
+    def __init__(self, ):
+        super(Model, self).__init__()
+        self.encode_image = resnet50(pretrained=True)
+        modules = list(self.encode_image.children())[:-2]
+        self.encode_image = nn.Sequential(*modules)
+        self.decoder1 = _ScaleUp(2048, 1024)
+        self.decoder2 = _ScaleUp(1024, 512)
+        self.decoder3 = _ScaleUp(512, 256)
+        self.saliency = nn.Conv2d(256, 1, kernel_size=1, stride=1, padding=0)
+
+        self.__init_weights__()
+
+    def __init_weights__(self):
+
+        nn.init.kaiming_normal_(self.saliency.weight)
+        nn.init.constant_(self.saliency.bias, 0.0)
+
+    def forward(self, x):
+        x1 = self.encode_image(x)
+        x1 = self.decoder1(x1)
+        x1 = self.decoder2(x1)
+        x1 = self.decoder3(x1)
+        sal = self.saliency(x1)
+        sal = F.relu(sal, inplace=True)
+        return sal
 
 if __name__ == '__main__':
 
-    acc = test(model)
+	model = ResNetSal()
 
-    inp = torch.randn(1,3,32,32)
+	if CUDA:
+	    model.cuda()
+
+	if os.path.isfile(CHECKPOINT_PATH):
+	    print("=> loading checkpoint '{}'".format(CHECKPOINT_PATH))
+	    checkpoint = torch.load(CHECKPOINT_PATH)
+	    best_prec1 = checkpoint['best_prec1']
+	    model.load_state_dict(checkpoint['state_dict'])
+	    print("=> loaded checkpoint '{}' (epoch {}) Prec1: {:f}"
+	          .format(CHECKPOINT_PATH, checkpoint['epoch'], best_prec1))
+	else:
+	    print("=> no checkpoint found at '{}'".format(CHECKPOINT_PATH))
+
+	print('Pre-processing Successful!')
+
+    inp = torch.randn(1, 3, 320, 256)
     flops, params = profile(model.cpu(), inputs=((inp), ))
     g_flops = flops / float(1024*1024*1024)
     m_params = params / float(1024*1024)
     line_0 = 'raw [%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet', round(g_flops, 4), round(m_params, 4))
    
 
-    skip = {
-        'A': [36],
-        'B': [36, 38, 74],
-    }
+    skip = {'A': []}
 
-    prune_prob = {
-        'A': [0.5, 0.0, 0.0],
-        'B': [0.5, 0.4, 0.3],
-    }
+    prune_prob = {'A': 0.75}
 
     layer_id = 1
     cfg = []
@@ -148,73 +152,73 @@ if __name__ == '__main__':
     if args.cuda:
         newmodel.cuda()
 
-    start_mask = torch.ones(3)
-    layer_id_in_cfg = 0
-    conv_count = 1
-    for [m0, m1] in zip(model.modules(), newmodel.modules()):
-        if isinstance(m0, nn.Conv2d):
-            if conv_count == 1:
-                m1.weight.data = m0.weight.data.clone()
-                conv_count += 1
-                continue
-            if conv_count % 2 == 0:
-                mask = cfg_mask[layer_id_in_cfg]
-                idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
-                if idx.size == 1:
-                    idx = np.resize(idx, (1,))
-                w = m0.weight.data[idx.tolist(), :, :, :].clone()
-                m1.weight.data = w.clone()
-                layer_id_in_cfg += 1
-                conv_count += 1
-                continue
-            if conv_count % 2 == 1:
-                mask = cfg_mask[layer_id_in_cfg-1]
-                idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
-                if idx.size == 1:
-                    idx = np.resize(idx, (1,))
-                w = m0.weight.data[:, idx.tolist(), :, :].clone()
-                m1.weight.data = w.clone()
-                conv_count += 1
-                continue
-        elif isinstance(m0, nn.BatchNorm2d):
-            if conv_count % 2 == 1:
-                mask = cfg_mask[layer_id_in_cfg-1]
-                idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
-                if idx.size == 1:
-                    idx = np.resize(idx, (1,))
-                m1.weight.data = m0.weight.data[idx.tolist()].clone()
-                m1.bias.data = m0.bias.data[idx.tolist()].clone()
-                m1.running_mean = m0.running_mean[idx.tolist()].clone()
-                m1.running_var = m0.running_var[idx.tolist()].clone()
-                continue
-            m1.weight.data = m0.weight.data.clone()
-            m1.bias.data = m0.bias.data.clone()
-            m1.running_mean = m0.running_mean.clone()
-            m1.running_var = m0.running_var.clone()
-        elif isinstance(m0, nn.Linear):
-            m1.weight.data = m0.weight.data.clone()
-            m1.bias.data = m0.bias.data.clone()
+    # start_mask = torch.ones(3)
+    # layer_id_in_cfg = 0
+    # conv_count = 1
+    # for [m0, m1] in zip(model.modules(), newmodel.modules()):
+    #     if isinstance(m0, nn.Conv2d):
+    #         if conv_count == 1:
+    #             m1.weight.data = m0.weight.data.clone()
+    #             conv_count += 1
+    #             continue
+    #         if conv_count % 2 == 0:
+    #             mask = cfg_mask[layer_id_in_cfg]
+    #             idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
+    #             if idx.size == 1:
+    #                 idx = np.resize(idx, (1,))
+    #             w = m0.weight.data[idx.tolist(), :, :, :].clone()
+    #             m1.weight.data = w.clone()
+    #             layer_id_in_cfg += 1
+    #             conv_count += 1
+    #             continue
+    #         if conv_count % 2 == 1:
+    #             mask = cfg_mask[layer_id_in_cfg-1]
+    #             idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
+    #             if idx.size == 1:
+    #                 idx = np.resize(idx, (1,))
+    #             w = m0.weight.data[:, idx.tolist(), :, :].clone()
+    #             m1.weight.data = w.clone()
+    #             conv_count += 1
+    #             continue
+    #     elif isinstance(m0, nn.BatchNorm2d):
+    #         if conv_count % 2 == 1:
+    #             mask = cfg_mask[layer_id_in_cfg-1]
+    #             idx = np.squeeze(np.argwhere(np.asarray(mask.cpu().numpy())))
+    #             if idx.size == 1:
+    #                 idx = np.resize(idx, (1,))
+    #             m1.weight.data = m0.weight.data[idx.tolist()].clone()
+    #             m1.bias.data = m0.bias.data[idx.tolist()].clone()
+    #             m1.running_mean = m0.running_mean[idx.tolist()].clone()
+    #             m1.running_var = m0.running_var[idx.tolist()].clone()
+    #             continue
+    #         m1.weight.data = m0.weight.data.clone()
+    #         m1.bias.data = m0.bias.data.clone()
+    #         m1.running_mean = m0.running_mean.clone()
+    #         m1.running_var = m0.running_var.clone()
+    #     elif isinstance(m0, nn.Linear):
+    #         m1.weight.data = m0.weight.data.clone()
+    #         m1.bias.data = m0.bias.data.clone()
 
-    torch.save({'cfg': cfg, 'state_dict': newmodel.state_dict()}, os.path.join(args.save, 'pruned.pth.tar'))
+    # torch.save({'cfg': cfg, 'state_dict': newmodel.state_dict()}, os.path.join(args.save, 'pruned.pth.tar'))
 
-    print(newmodel)
-    model = newmodel
-    acc = test(model.cuda())
+    # print(newmodel)
+    # model = newmodel
+    # acc = test(model.cuda())
 
-    num_parameters = sum([param.nelement() for param in newmodel.parameters()])
-    print("number of parameters: "+str(num_parameters))
-    with open(os.path.join(args.save, "prune.txt"), "w") as fp:
-        fp.write("Number of parameters: \n"+str(num_parameters)+"\n")
-        fp.write("Test Accuracy: \n"+str(acc)+"\n")
+    # num_parameters = sum([param.nelement() for param in newmodel.parameters()])
+    # print("number of parameters: "+str(num_parameters))
+    # with open(os.path.join(args.save, "prune.txt"), "w") as fp:
+    #     fp.write("Number of parameters: \n"+str(num_parameters)+"\n")
+    #     fp.write("Test Accuracy: \n"+str(acc)+"\n")
 
 
-    inp = torch.randn(1,3,32,32)
-    flops, params = profile(model.cpu(), inputs=((inp), ))
-    g_flops = flops / float(1024*1024*1024)
-    m_params = params / float(1024*1024)
-    line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet-prune', round(g_flops, 4), round(m_params, 4))
+    # inp = torch.randn(1,3,32,32)
+    # flops, params = profile(model.cpu(), inputs=((inp), ))
+    # g_flops = flops / float(1024*1024*1024)
+    # m_params = params / float(1024*1024)
+    # line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet-prune', round(g_flops, 4), round(m_params, 4))
 
-    print('\n----------------------')
-    print(line_0)
-    print(line_1)
-    print('----------------------\n')
+    # print('\n----------------------')
+    # print(line_0)
+    # print(line_1)
+    # print('----------------------\n')
