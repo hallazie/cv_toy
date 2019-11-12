@@ -13,3 +13,5 @@ reduce time consumption. time consumption is directly related to gflops of model
 ### Model Structure
 
 model structure: shallower, slimer, use depth-wise seperable conv to reduce gflops.
+
+the model consists of []
