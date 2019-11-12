@@ -12,6 +12,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import traceback
 
 from torch.autograd import Variable
 from torchvision import datasets, transforms
@@ -24,10 +25,8 @@ CHECKPOINT_PATH = 'E:\\Dataset\\SAL\\output\\resnetsal'
 
 
 class _ScaleUp(nn.Module):
-
     def __init__(self, in_size, out_size):
         super(_ScaleUp, self).__init__()
-
         self.up = nn.Sequential(
             nn.ConvTranspose2d(in_size, in_size, kernel_size=2, stride=2),
             nn.BatchNorm2d(in_size),
@@ -39,7 +38,6 @@ class _ScaleUp(nn.Module):
             nn.Conv2d(out_size, out_size, kernel_size=1, stride=1),
             nn.LeakyReLU(inplace=True),
         )
-
         self.__init_weights__()
 
     def __init_weights__(self):
@@ -57,49 +55,78 @@ class _ScaleUp(nn.Module):
 
 
 class ResNetSal(nn.Module):
-
     def __init__(self, cfg=None):
         super(ResNetSal, self).__init__()
         self.encode_image = resnet50(pretrained=False)
+        self.normal_skip = [8, 11, 18, 21, 24, 31, 34, 37, 40, 43, 50, 53]
+        self.down_skip = [5, 15, 28, 47]
         modules = nn.Sequential(
-            *list(self.encode_image.children())[:-2] + [_ScaleUp(2048, 1024), _ScaleUp(1024, 512), _ScaleUp(512, 256)])
+            # *list(self.encode_image.children())[:-2] + [_ScaleUp(2048, 1024), _ScaleUp(1024, 512), _ScaleUp(512, 256)])
+            *list(self.encode_image.children())[:-2])
         modules_flat = []
-        layer_id = 0
-        for x in nn.Sequential(*modules).modules():
-            try:
-                if type(x) == nn.Conv2d:
-                    out_size, in_size, kernel_size, _ = list(x.weight.shape)
-                    if cfg is not None:
-                        out_size = cfg[layer_id]
-                    y = nn.Conv2d(in_size, out_size, kernel_size=kernel_size)
-                    modules_flat.append(y)
-                    layer_id += 1
-                elif type(x) == nn.ConvTranspose2d:
-                    out_size, in_size, kernel_size, stride_size = list(x.weight.shape)
-                    if cfg is not None:
-                        out_size = cfg[layer_id]
-                    y = nn.ConvTranspose2d(in_size, out_size, kernel_size=kernel_size, stride=stride_size)
-                    modules_flat.append(y)
-                    layer_id += 1
-                elif type(x) != Bottleneck and type(x) != nn.Sequential and type(x) != _ScaleUp:
-                    modules_flat.append(x)
-            except Exception as e:
-                print(layer_id)
-                print(len(cfg))
+        layer_id = 1
+        for x in modules.modules():
+            if type(x) == nn.Conv2d:
+                out_size, in_size, kernel_size, _ = list(x.weight.shape)
+                if cfg is not None:
+                    out_size = cfg[layer_id]
+                y = nn.Conv2d(in_size, out_size, kernel_size=kernel_size)
+                modules_flat.append(y)
+                layer_id += 1
+            elif type(x) == nn.ConvTranspose2d:
+                out_size, in_size, kernel_size, stride_size = list(x.weight.shape)
+                if cfg is not None:
+                    out_size = cfg[layer_id]
+                y = nn.ConvTranspose2d(in_size, out_size, kernel_size=kernel_size, stride=stride_size)
+                modules_flat.append(y)
+                layer_id += 1
+            elif type(x) != Bottleneck and type(x) != nn.Sequential and type(x) != _ScaleUp:
+                modules_flat.append(x)
+            else:
+                print('upper layer type %s is left behind' % type(x))
+
         self.encode_image = nn.Sequential(*modules_flat)
-        self.saliency = nn.Conv2d(256, 1, kernel_size=1, stride=1, padding=0)
+        # self.encode_image = modules
+        self.saliency = nn.Conv2d(2048, 1, kernel_size=1, stride=1, padding=0)
         self.__init_weights__()
 
     def __init_weights__(self):
-
         nn.init.kaiming_normal_(self.saliency.weight)
         nn.init.constant_(self.saliency.bias, 0.0)
 
     def forward(self, x):
-        x1 = self.encode_image(x)
-        sal = self.saliency(x1)
-        sal = F.relu(sal, inplace=True)
-        return sal
+        prev_ksize, prev_csize, prev_x = 0, 0, None
+        layer_id = 1
+        for m in self.encode_image.modules():
+            if type(m) not in [nn.Sequential, Bottleneck]:
+                if type(m) in [nn.Conv2d, nn.ConvTranspose2d]:
+                    try:
+                        print(x.shape)
+                        print(m)
+                        if layer_id in self.normal_skip:
+                            x = m(x)
+                            x += prev_x
+                            prev_x = x
+                        elif layer_id in self.down_skip:
+                            x += m(prev_x)
+                            prev_x = x
+                        elif layer_id == 1:
+                            x = m(x)
+                            prev_x = x
+                        else:
+                            x = m(x)
+                        layer_id += 1
+                    except Exception as e:
+                        traceback.print_exc()
+                        exit()
+                else:
+                    x = m(x)
+                    if type(m) is nn.MaxPool2d:
+                        prev_x = x
+
+        x = self.saliency(x)
+        x = F.relu(x, inplace=True)
+        return x
 
 
 if __name__ == '__main__':
@@ -121,13 +148,17 @@ if __name__ == '__main__':
     #
     # print('Pre-processing Successful!')
 
-    print(model)
+    # print(model)
 
-    inp = torch.randn(1, 3, 320, 256)
+    inp = torch.randn(1, 3, 256, 256)
+    model.cpu()(inp)
     flops, params = profile(model.cpu(), inputs=(inp,))
     g_flops = flops / float(1024 * 1024 * 1024)
     m_params = params / float(1024 * 1024)
     line_0 = 'raw [%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet', round(g_flops, 4), round(m_params, 4))
+    print(line_0)
+
+    exit()
 
     layer_id = 1
     cfg = []
@@ -209,13 +240,12 @@ if __name__ == '__main__':
 
     model = newmodel
 
-    inp = torch.randn(1, 3, 320, 256)
-    flops, params = profile(model.cpu(), inputs=(inp,))
-    g_flops = flops / float(1024 * 1024 * 1024)
-    m_params = params / float(1024 * 1024)
-    line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet-prune', round(g_flops, 4), round(m_params, 4))
-    #
-    print('\n----------------------')
-    print(line_0)
-    print(line_1)
-    print('----------------------\n')
+    # inp = torch.randn(1, 3, 320, 256)
+    # flops, params = profile(model.cpu(), inputs=(inp,))
+    # g_flops = flops / float(1024 * 1024 * 1024)
+    # m_params = params / float(1024 * 1024)
+    # line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnet-prune', round(g_flops, 4), round(m_params, 4))
+
+    # print('\n----------------------')
+    # print(line_1)
+    # print('----------------------\n')
