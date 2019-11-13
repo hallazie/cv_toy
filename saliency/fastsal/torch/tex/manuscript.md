@@ -2,6 +2,8 @@
 
 ### Motivation
 
+Most of previous models are constructed with a classification-task pretrained model ()
+
 To tackle the problem of [resource constraint conditions] which previous models neglected, we propose a compact and efficient model, named xxx. xxx archieves comparable results, and cost only minimal computational resources comparing with previous deep models.
 
 To propose such model, we mainly consider three aspect stated previously: (1) memory requirements and size on disk, (2) number of math-ematical operations, and (3) speed. We want to optimize the memory requirements (run time RAM cost) and model size (storage cost) as possible, while keeping a comparable performance. Generally speaking, the performance of a model is mainly related to it's model complexity, namely gflops.
