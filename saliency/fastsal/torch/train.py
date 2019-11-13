@@ -181,13 +181,13 @@ class TrainSal(object):
 
 if __name__ == "__main__":
     folder = 'E:\\Dataset\\SAL\\'
-    print("Available models: {}".format(MODEL_NAME))
-    cfg = ModelConfig()
-    cfg.MODEL = MODEL_NAME[2]
-    # cfg.MODEL = 'fastsal'
-    cfg.B_SIZE = 1
-    print("Training: {}".format(cfg.MODEL))
-    model = make_model(cfg)
-    model_trainer = TrainSal(model, batch_size=1, num_workers=2, root_folder=folder)
-    # model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\', model_path='E:\\Dataset\\SAL\\output\\resnetsal\\checkpoint_256x320.pth.tar')
-    model_trainer.train_val_model(100, 'E:\\Dataset\\SAL\\output\\')
+    # print("Available models: {}".format(MODEL_NAME))
+    # cfg = ModelConfig()
+    # cfg.MODEL = MODEL_NAME[2]
+    # # cfg.MODEL = 'fastsal'
+    # cfg.B_SIZE = 1
+    # print("Training: {}".format(cfg.MODEL))
+    # model = make_model(cfg)
+    # model_trainer = TrainSal(model, batch_size=1, num_workers=2, root_folder=folder)
+    # # model_trainer.train_val_model(10, 'E:\\Dataset\\SAL\\output\\', model_path='E:\\Dataset\\SAL\\output\\resnetsal\\checkpoint_256x320.pth.tar')
+    # model_trainer.train_val_model(100, 'E:\\Dataset\\SAL\\output\\')
