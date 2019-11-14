@@ -16,7 +16,7 @@ reduce time consumption. time consumption is directly related to gflops of model
 
 ### Model Structure
 
-To achieve smaller model, multiple tricks were proposed recent years, such as pruning, distilling, etc. Though in which tricks pruning is most commly adopted, as stated in [rethinking pruning], training from sratch usually outperform pruning to the same size. So we design a compact model and train it from scratch. The principle of designing is to get as smaller as possible while preserve comparable performance. We archieve this goal by designing a slim convnet with same depth with VGG16, to simulate the prunned model. We then adopt depth wise seperable convolution to further reduce the model size. 
+To achieve smaller model, multiple tricks were proposed recent years, such as pruning, distilling, etc. Though in which tricks pruning is most commly adopted, as stated in [rethinking pruning], training from sratch usually outperform the model that pruned to the same size. So we design a compact model and train it from scratch. The principle of designing is to get as smaller as possible while preserve comparable performance. We archieve this goal by constructing a slim convnet with same depth with VGG16, to simulate the prunned model. We then adopt depth wise seperable convolution to further reduce the model size. 
 
 the model consists of 2 3x3 conv layers, 13 inverted residual modules followed by 1 1x1 channel reduction conv layer. The inverted residual modules were first introduced in MobileV2[]. The model use depth seperable conv layers to reduce connection between two conv layers, while keep the channel width.
 
