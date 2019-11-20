@@ -16,14 +16,14 @@ class RusidualBlock(nn.Module):
     def __init__(self, inp, out, exp, droprate):
         super(RusidualBlock, self).__init__()
         self.res_flag = inp == out
-        inp = int(inp * droprate)
+        inp = int(inp * droprate) if inp != 3 else 3
         out = int(out * droprate)
         mid = int((out * droprate) // exp)
-        self.conv1 = nn.Conv2d(inp, exp, kernel_size=1, padding=0)
-        self.bn1 = nn.BatchNorm2d(exp)
-        self.conv2 = nn.Conv2d(exp, exp, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(exp)
-        self.conv3 = nn.Conv2d(exp, out, kernel_size=1, padding=0)
+        self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0)
+        self.bn1 = nn.BatchNorm2d(mid)
+        self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(mid)
+        self.conv3 = nn.Conv2d(mid, out, kernel_size=1, padding=0)
         self.bn3 = nn.BatchNorm2d(out)
         self.relu = nn.ReLU(inplace=True)
         self.convr = nn.Conv2d(inp, out, kernel_size=1, padding=0)
@@ -31,7 +31,7 @@ class RusidualBlock(nn.Module):
 
     def forward(self, x):
         residual = x
-        if self.res_flag:
+        if not self.res_flag:
             residual = self.convr(residual)
             residual = self.bnr(residual)
         x = self.conv1(x)
@@ -87,15 +87,18 @@ class Model(nn.Module):
 
     def __init__(self, ):
         super(Model, self).__init__()
-        self.encode_image = resnet50(pretrained=True)
-        modules = list(self.encode_image.children())[:-2]
-        modules_flat = []
+        # self.encode_image = resnet50(pretrained=True)
+        # modules = list(self.encode_image.children())[:-2]
+        modules_flat = [
+            RusidualBlock(3, 32, 4, 0.5),
+            RusidualBlock(32, 32, 4, 0.5),
+        ]
+        self.encode_image = nn.Sequential(*modules_flat)
 
         for m in self.encode_image.modules():
-            if type(m) == Bottleneck:
+            if type(m) == RusidualBlock:
                 flat_bottleneck(m)
-
-        self.encode_image = nn.Sequential(*modules)
+        
         self.decoder1 = _ScaleUp(2048, 1024)
         self.decoder2 = _ScaleUp(1024, 512)
         self.decoder3 = _ScaleUp(512, 256)
@@ -114,16 +117,15 @@ class Model(nn.Module):
         x1 = self.decoder2(x1)
         x1 = self.decoder3(x1)
         sal = self.saliency(x1)
-        sal = F.relu(sal, inplace=True)
+        sal = F.relu(x1, inplace=True)
         return sal
 
 if __name__ == "__main__":
     sample_input = torch.zeros(1, 3, 256, 320).cuda()
     model = Model().cuda()
     model(sample_input)
-    # flops, params = profile(model.cuda(), inputs=(sample_input,))
-    # g_flops = flops / float(1024 * 1024 * 1024)
-    # m_params = params / float(1024 * 1024)
-    # line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
-    # print(line_1)
-    pass
+    flops, params = profile(model.cuda(), inputs=(sample_input,))
+    g_flops = flops / float(1024 * 1024 * 1024)
+    m_params = params / float(1024 * 1024)
+    line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
+    print(line_1)
