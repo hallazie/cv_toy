@@ -3,9 +3,16 @@
 import numpy as np
 
 def run():
-    a = np.random.rand(4,2,2)
-    print(a)
-    print(np.argwhere())
+    a = np.array([
+    	[[4,4,4],[4,4,4],[4,4,4]],
+    	[[2,2,2],[2,2,2],[2,2,2]],
+    	[[1,1,1],[1,1,1],[1,1,1]],
+ 		[[5,5,5],[5,5,5],[5,5,5]],
+    	[[3,3,3],[3,3,3],[3,3,3]],
+    ])
+    # print(a[[0,1,3],:,:])
+    b = np.argsort(np.sum(a, axis=(1,2)))[::-1][:3]
+    print(a[b,:,:])
 
 if __name__ == '__main__':
     run()

@@ -13,8 +13,9 @@ from thop import profile
 
 class RusidualBlock(nn.Module):
 
-    def __init__(self, inp, out, exp, droprate):
+    def __init__(self, inp, out, exp, droprate, weight=None):
         super(RusidualBlock, self).__init__()
+        self.droprate = droprate
         self.res_flag = inp == out
         inp = int(inp * droprate) if inp != 3 else 3
         out = int(out * droprate)
@@ -28,6 +29,12 @@ class RusidualBlock(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.convr = nn.Conv2d(inp, out, kernel_size=1, padding=0)
         self.bnr = nn.BatchNorm2d(out)
+        if weight != None:
+            self.weight = weight
+            self.init_weight()
+
+    def init_weight(self):
+        pass
 
     def forward(self, x):
         residual = x
