@@ -13,7 +13,7 @@ from thop import profile
 
 class ResidualBlock(nn.Module):
 
-    def __init__(self, inp, out, exp, droprate, keep_input_size=False, weight=None):
+    def __init__(self, inp, out, exp, droprate, keep_input_size=False, stride=1):
         super(ResidualBlock, self).__init__()
         self.droprate = droprate
         self.res_flag = inp == out
@@ -22,16 +22,14 @@ class ResidualBlock(nn.Module):
         mid = int((out * droprate) // exp)
         self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0)
         self.bn1 = nn.BatchNorm2d(mid)
-        self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, stride=stride, padding=1)
         self.bn2 = nn.BatchNorm2d(mid)
         self.conv3 = nn.Conv2d(mid, out, kernel_size=1, padding=0)
         self.bn3 = nn.BatchNorm2d(out)
         self.relu = nn.ReLU(inplace=True)
-        self.convr = nn.Conv2d(inp, out, kernel_size=1, padding=0)
+        self.convr = nn.Conv2d(inp, out, kernel_size=1, stride=stride, padding=0)
         self.bnr = nn.BatchNorm2d(out)
-        if weight != None:
-            self.weight = weight
-            self.init_weight()
+        self.init_weight()
 
     def init_weight(self):
         nn.init.kaiming_normal_(self.conv1.weight)
@@ -60,7 +58,7 @@ class ResidualBlock(nn.Module):
 
 class ScaleUpBlock(nn.Module):
 
-    def __init__(self, inp, out, droprate, weight=None):
+    def __init__(self, inp, out, droprate):
         super(ScaleUpBlock, self).__init__()
         self.droprate = droprate
         self.res_flag = inp == out
@@ -74,9 +72,7 @@ class ScaleUpBlock(nn.Module):
         self.relu2 = nn.ReLU(inplace=True)
         self.conv3 = nn.Conv2d(out, out, kernel_size=1, stride=1)
         self.relu3 = nn.ReLU(inplace=True)
-        if weight != None:
-            self.weight = weight
-            self.init_weight()
+        self.init_weight()
 
     def init_weight(self):
         nn.init.kaiming_normal_(self.deconv1.weight)
@@ -97,23 +93,50 @@ class ScaleUpBlock(nn.Module):
         x = self.relu3(x)
         return x
 
-        
+
 class Model(nn.Module):
 
     def __init__(self, ):
         super(Model, self).__init__()
         self.droprate = 0.5
+        modules_raw = list(resnet50(pretrained=True).children())[:-2]
         modules_flat = [
             nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
-            # ResidualBlock(64, 256, 4, self.droprate, keep_input_size=True),
-            # ScaleUpBlock(64, 32, self.droprate),
-            self.Re
+            ResidualBlock(64, 256, 4, self.droprate, keep_input_size=True),
+            ResidualBlock(256, 256, 4, self.droprate),
+            ResidualBlock(256, 256, 4, self.droprate),
+            ResidualBlock(256, 512, 4, self.droprate, stride=2),
+            ResidualBlock(512, 512, 4, self.droprate),
+            ResidualBlock(512, 512, 4, self.droprate),
+            ResidualBlock(512, 512, 4, self.droprate),
+            ResidualBlock(512, 1024, 4, self.droprate, stride=2),
+            ResidualBlock(1024, 1024, 4, self.droprate),
+            ResidualBlock(1024, 1024, 4, self.droprate),
+            ResidualBlock(1024, 1024, 4, self.droprate),
+            ResidualBlock(1024, 1024, 4, self.droprate),
+            ResidualBlock(1024, 1024, 4, self.droprate),
+            ResidualBlock(1024, 2048, 4, self.droprate, stride=2),
+            ResidualBlock(2048, 2048, 4, self.droprate),
+            ResidualBlock(2048, 2048, 4, self.droprate),
         ]
+        conv_list1 = [repr(x) for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d]
+        conv_list2 = [repr(x) for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d]
+        for x in conv_list1:
+            print(x)
+        print('=====================')
+        for x in conv_list2:
+            print(x)
+        assert len(conv_list1) == len(conv_list2)
+        for x in zip(conv_list1, conv_list2):
+            print('%s-----%s' % (x[0], x[1]))
+        self.decoder1 = ScaleUpBlock(2048, 1024, self.droprate),
+        self.decoder2 = ScaleUpBlock(1024, 512, self.droprate),
+        self.decoder3 = ScaleUpBlock(512, 256, self.droprate),
         self.encode_image = nn.Sequential(*modules_flat)
-        self.saliency = nn.Conv2d(16, 1, kernel_size=1, stride=1, padding=0)
+        self.saliency = nn.Conv2d(int(256*self.droprate), 1, kernel_size=1, stride=1, padding=0)
 
         self.__init_weights__()
 
@@ -123,6 +146,9 @@ class Model(nn.Module):
 
     def forward(self, x):
         x = self.encode_image(x)
+        x = self.decoder1(x)
+        x = self.decoder2(x)
+        x = self.decoder3(x)
         x = self.saliency(x)
         x = F.relu(x, inplace=True)
         return x
@@ -132,7 +158,6 @@ if __name__ == "__main__":
     model = Model().cuda()
     model(sample_input)
     flops, params = profile(model.cuda(), inputs=(sample_input,))
-    print(flops, params)
     g_flops = flops / float(1024 * 1024 * 1024)
     m_params = params / float(1024 * 1024)
     line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
