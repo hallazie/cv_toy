@@ -11,13 +11,13 @@ from torchvision.models.resnet import resnet50, Bottleneck
 
 from thop import profile
 
-class RusidualBlock(nn.Module):
+class ResidualBlock(nn.Module):
 
-    def __init__(self, inp, out, exp, droprate, weight=None):
-        super(RusidualBlock, self).__init__()
+    def __init__(self, inp, out, exp, droprate, keep_input_size=False, weight=None):
+        super(ResidualBlock, self).__init__()
         self.droprate = droprate
         self.res_flag = inp == out
-        inp = int(inp * droprate) if inp != 3 else 3
+        inp = int(inp * droprate) if not keep_input_size else inp
         out = int(out * droprate)
         mid = int((out * droprate) // exp)
         self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0)
@@ -34,7 +34,14 @@ class RusidualBlock(nn.Module):
             self.init_weight()
 
     def init_weight(self):
-        pass
+        nn.init.kaiming_normal_(self.conv1.weight)
+        nn.init.constant_(self.conv1.bias, 0.0)
+        nn.init.kaiming_normal_(self.conv2.weight)
+        nn.init.constant_(self.conv2.bias, 0.0)
+        nn.init.kaiming_normal_(self.conv3.weight)
+        nn.init.constant_(self.conv3.bias, 0.0)
+        nn.init.kaiming_normal_(self.convr.weight)
+        nn.init.constant_(self.convr.bias, 0.0)
 
     def forward(self, x):
         residual = x
@@ -51,87 +58,81 @@ class RusidualBlock(nn.Module):
         x = self.relu(x)
         return x
 
-class _ScaleUp(nn.Module):
+class ScaleUpBlock(nn.Module):
 
-    def __init__(self, in_size, out_size):
-        super(_ScaleUp, self).__init__()
+    def __init__(self, inp, out, droprate, weight=None):
+        super(ScaleUpBlock, self).__init__()
+        self.droprate = droprate
+        self.res_flag = inp == out
+        inp = int(inp * droprate) if inp != 3 else 3
+        out = int(out * droprate)
+        self.deconv1 = nn.ConvTranspose2d(inp, inp, kernel_size=2, stride=2)
+        self.bn1 = nn.BatchNorm2d(inp)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(inp, out, kernel_size=3, stride=1, padding=2, dilation=2)
+        self.bn2 = nn.BatchNorm2d(out)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.conv3 = nn.Conv2d(out, out, kernel_size=1, stride=1)
+        self.relu3 = nn.ReLU(inplace=True)
+        if weight != None:
+            self.weight = weight
+            self.init_weight()
 
-        self.up = nn.Sequential(
-            nn.ConvTranspose2d(in_size, in_size, kernel_size=2, stride=2),
-            nn.BatchNorm2d(in_size),
-            nn.LeakyReLU(inplace=True))
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_size, out_size, kernel_size=3, stride=1, padding=2, dilation=2),
-            nn.BatchNorm2d(out_size),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(out_size, out_size, kernel_size=1, stride=1),
-            nn.LeakyReLU(inplace=True),
-        )
+    def init_weight(self):
+        nn.init.kaiming_normal_(self.deconv1.weight)
+        nn.init.constant_(self.deconv1.bias, 0.0)
+        nn.init.kaiming_normal_(self.conv2.weight)
+        nn.init.constant_(self.conv2.bias, 0.0)
+        nn.init.kaiming_normal_(self.conv3.weight)
+        nn.init.constant_(self.conv3.bias, 0.0)
 
-        self.__init_weights__()
+    def forward(self, x):
+        x = self.deconv1(x)
+        x = self.bn1(x)
+        x = self.relu1(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu2(x)
+        x = self.conv3(x)
+        x = self.relu3(x)
+        return x
 
-    def __init_weights__(self):
-
-        nn.init.kaiming_normal_(self.conv[0].weight)
-        nn.init.constant_(self.conv[0].bias, 0.0)
-        nn.init.kaiming_normal_(self.conv[3].weight)
-        nn.init.constant_(self.conv[3].bias, 0.0)
-
-        nn.init.kaiming_normal_(self.up[0].weight)
-        nn.init.constant_(self.up[0].bias, 0.0)
-
-    def forward(self, inputs):
-        output = self.up(inputs)
-        output = self.conv(output)
-        return output
-
-def flat_bottleneck(bottleneck):
-    for x in bottleneck.modules():
-        print(x)
-    print('----------')
-
+        
 class Model(nn.Module):
 
     def __init__(self, ):
         super(Model, self).__init__()
-        # self.encode_image = resnet50(pretrained=True)
-        # modules = list(self.encode_image.children())[:-2]
+        self.droprate = 0.5
         modules_flat = [
-            RusidualBlock(3, 32, 4, 0.5),
-            RusidualBlock(32, 32, 4, 0.5),
+            nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
+            nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
+            # ResidualBlock(64, 256, 4, self.droprate, keep_input_size=True),
+            # ScaleUpBlock(64, 32, self.droprate),
+            self.Re
         ]
         self.encode_image = nn.Sequential(*modules_flat)
-
-        for m in self.encode_image.modules():
-            if type(m) == RusidualBlock:
-                flat_bottleneck(m)
-        
-        self.decoder1 = _ScaleUp(2048, 1024)
-        self.decoder2 = _ScaleUp(1024, 512)
-        self.decoder3 = _ScaleUp(512, 256)
-        self.saliency = nn.Conv2d(256, 1, kernel_size=1, stride=1, padding=0)
+        self.saliency = nn.Conv2d(16, 1, kernel_size=1, stride=1, padding=0)
 
         self.__init_weights__()
 
     def __init_weights__(self):
-
         nn.init.kaiming_normal_(self.saliency.weight)
         nn.init.constant_(self.saliency.bias, 0.0)
 
     def forward(self, x):
-        x1 = self.encode_image(x)
-        x1 = self.decoder1(x1)
-        x1 = self.decoder2(x1)
-        x1 = self.decoder3(x1)
-        sal = self.saliency(x1)
-        sal = F.relu(x1, inplace=True)
-        return sal
+        x = self.encode_image(x)
+        x = self.saliency(x)
+        x = F.relu(x, inplace=True)
+        return x
 
 if __name__ == "__main__":
     sample_input = torch.zeros(1, 3, 256, 320).cuda()
     model = Model().cuda()
     model(sample_input)
     flops, params = profile(model.cuda(), inputs=(sample_input,))
+    print(flops, params)
     g_flops = flops / float(1024 * 1024 * 1024)
     m_params = params / float(1024 * 1024)
     line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
