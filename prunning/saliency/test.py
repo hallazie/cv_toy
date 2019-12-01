@@ -12,6 +12,7 @@ def run():
     ])
     # print(a[[0,1,3],:,:])
     b = np.argsort(np.sum(a, axis=(1,2)))[::-1][:3]
+    print(b)
     print(a[b,:,:])
 
 if __name__ == '__main__':
