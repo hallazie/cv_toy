@@ -18,7 +18,7 @@ class ResidualBlock(nn.Module):
 
     def __init__(self, inp, out, exp, droprate, keep_input_size=False, stride=1):
         super(ResidualBlock, self).__init__()
-        self.droprate = droprate
+        self.keeprate = droprate
         self.res_flag = inp == out
         inp = int(inp * droprate) if not keep_input_size else inp
         out = int(out * droprate)
@@ -77,7 +77,7 @@ class ScaleUpBlock(nn.Module):
 
     def __init__(self, inp, out, droprate):
         super(ScaleUpBlock, self).__init__()
-        self.droprate = droprate
+        self.keeprate = droprate
         self.res_flag = inp == out
         inp = int(inp * droprate) if inp != 3 else 3
         out = int(out * droprate)
@@ -115,63 +115,69 @@ class Model(nn.Module):
 
     def __init__(self, ):
         super(Model, self).__init__()
-        self.droprate = 1.
+        self.keeprate = 0.5
         modules_raw = list(resnet50(pretrained=True).children())[:-2]
         modules_flat = [
             nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
-            ResidualBlock(64, 256, 4, self.droprate, keep_input_size=True),
-            ResidualBlock(256, 256, 4, self.droprate),
-            ResidualBlock(256, 256, 4, self.droprate),
-            ResidualBlock(256, 512, 4, self.droprate, stride=2),
-            ResidualBlock(512, 512, 4, self.droprate),
-            ResidualBlock(512, 512, 4, self.droprate),
-            ResidualBlock(512, 512, 4, self.droprate),
-            ResidualBlock(512, 1024, 4, self.droprate, stride=2),
-            ResidualBlock(1024, 1024, 4, self.droprate),
-            ResidualBlock(1024, 1024, 4, self.droprate),
-            ResidualBlock(1024, 1024, 4, self.droprate),
-            ResidualBlock(1024, 1024, 4, self.droprate),
-            ResidualBlock(1024, 1024, 4, self.droprate),
-            ResidualBlock(1024, 2048, 4, self.droprate, stride=2),
-            ResidualBlock(2048, 2048, 4, self.droprate),
-            ResidualBlock(2048, 2048, 4, self.droprate),
+            ResidualBlock(64, 256, 4, self.keeprate, keep_input_size=True),
+            ResidualBlock(256, 256, 4, self.keeprate),
+            ResidualBlock(256, 256, 4, self.keeprate),
+            ResidualBlock(256, 512, 4, self.keeprate, stride=2),
+            ResidualBlock(512, 512, 4, self.keeprate),
+            ResidualBlock(512, 512, 4, self.keeprate),
+            ResidualBlock(512, 512, 4, self.keeprate),
+            ResidualBlock(512, 1024, 4, self.keeprate, stride=2),
+            ResidualBlock(1024, 1024, 4, self.keeprate),
+            ResidualBlock(1024, 1024, 4, self.keeprate),
+            ResidualBlock(1024, 1024, 4, self.keeprate),
+            ResidualBlock(1024, 1024, 4, self.keeprate),
+            ResidualBlock(1024, 1024, 4, self.keeprate),
+            ResidualBlock(1024, 2048, 4, self.keeprate, stride=2),
+            ResidualBlock(2048, 2048, 4, self.keeprate),
+            ResidualBlock(2048, 2048, 4, self.keeprate),
         ]
-        conv_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d]
-        conv_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d]
+        conv_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
+        conv_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
         bn_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.BatchNorm2d]
         bn_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.BatchNorm2d]
-
         try:
-            assert len(conv_list1) == len(conv_list2)
+            assert len(conv_list1) == len(conv_list2) and len(conv_list1) == len(bn_list1) and len(bn_list1) == len(bn_list2)
         except Exception as e:
             print('ASSERT ERROR: %s-%s' % (len(conv_list1), len(conv_list2)))
             exit()
+        for i in range(len(conv_list1)):
+            raw, flat, raw_bn, flat_bn = conv_list1[i], conv_list2[i], bn_list1[i], bn_list2[i]
+            weight = raw.weight.data.clone()
+            weight_bn = raw_bn.weight.data.clone()
+            index = np.argsort(np.sum(raw.weight.data.abs().clone().numpy(), axis=(1,2,3)))
+            index = index[:int(len(index)*self.keeprate)]
+            flat.weight.data = weight[index]
+            flat_bn.weight.data = weight_bn[index]
 
-        for raw, flat in zip(conv_list1, conv_list2):
-            flat.weight.data = raw.weight.data.clone()
-        for raw, flat in zip(bn_list1, bn_list2):
-            flat.weight.data = raw.weight.data.clone()
-
-        # self.decoder1 = ScaleUpBlock(2048, 1024, self.droprate)
-        # self.decoder2 = ScaleUpBlock(1024, 512, self.droprate)
-        # self.decoder3 = ScaleUpBlock(512, 256, self.droprate)
-        self.encode_image = nn.Sequential(*modules_raw)
-        self.saliency = nn.Conv2d(int(2048*self.droprate), 1, kernel_size=1, stride=1, padding=0, bias=False)
+        self.decoder1 = ScaleUpBlock(2048, 1024, self.keeprate)
+        self.decoder2 = ScaleUpBlock(1024, 512, self.keeprate)
+        self.decoder3 = ScaleUpBlock(512, 256, self.keeprate)
+        self.encode_image = nn.Sequential(*modules_flat)
+        # for x in self.encode_image.modules():
+        #     if type(x)==nn.Conv2d or type(x)==nn.BatchNorm2d:
+        #         print(x)
+        # exit()
+        self.saliency = nn.Conv2d(int(256*self.keeprate), 1, kernel_size=1, stride=1, padding=0, bias=False)
         self.__init_weights__()
 
     def __init_weights__(self):
-        # nn.init.kaiming_normal_(self.saliency.weight)
+        nn.init.kaiming_normal_(self.saliency.weight)
         # nn.init.constant_(self.saliency.bias, 0.0)
-        nn.init.constant_(self.saliency.weight, 1.)
+        # nn.init.constant_(self.saliency.weight, 1.)
 
     def forward(self, x):
         x = self.encode_image(x)
-        # x = self.decoder1(x)
-        # x = self.decoder2(x)
-        # x = self.decoder3(x)
+        x = self.decoder1(x)
+        x = self.decoder2(x)
+        x = self.decoder3(x)
         x = self.saliency(x)
         x = F.relu(x, inplace=True)
         return x
@@ -180,7 +186,6 @@ if __name__ == "__main__":
     img_path = 'G:\\datasets\\saliency\\SALICON\\images\\tiny\\i1.jpg'
     img = np.array(Image.open(img_path).resize((320, 256))).swapaxes(0,2).swapaxes(1,2)[np.newaxis]
     img = Variable(torch.from_numpy(img)).type(torch.FloatTensor)
-    # sample_input = torch.zeros(1, 3, 256, 320).cuda()
     model = Model().cuda()
     out = model(img.cuda())
     print('output shape: %s' % (str(out.shape)))
