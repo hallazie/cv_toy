@@ -22,7 +22,8 @@ class ResidualBlock(nn.Module):
         self.res_flag = inp == out
         inp = int(inp * droprate) if not keep_input_size else inp
         out = int(out * droprate)
-        mid = int((out * droprate) // exp)
+        # mid = int((out * droprate) // exp)
+        mid = int(out * droprate)
         self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(mid)
         self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -141,6 +142,11 @@ class Model(nn.Module):
         ]
         conv_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
         conv_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
+        # for x in conv_list1:
+        #     print(x)
+        # print('=========================')
+        # for x in conv_list2:
+        #     print(x)
         bn_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.BatchNorm2d]
         bn_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.BatchNorm2d]
         try:
@@ -150,12 +156,16 @@ class Model(nn.Module):
             exit()
         for i in range(len(conv_list1)):
             raw, flat, raw_bn, flat_bn = conv_list1[i], conv_list2[i], bn_list1[i], bn_list2[i]
+            s1 = flat.weight.shape
             weight = raw.weight.data.clone()
             weight_bn = raw_bn.weight.data.clone()
             index = np.argsort(np.sum(raw.weight.data.abs().clone().numpy(), axis=(1,2,3)))
             index = index[:int(len(index)*self.keeprate)]
             flat.weight.data = weight[index]
             flat_bn.weight.data = weight_bn[index]
+            s2 = flat.weight.shape
+            print('%s-->%s' % (str(s1), str(s2)))
+            # print('%s-->%s' % (str(flat), str(raw)))
 
         self.decoder1 = ScaleUpBlock(2048, 1024, self.keeprate)
         self.decoder2 = ScaleUpBlock(1024, 512, self.keeprate)
