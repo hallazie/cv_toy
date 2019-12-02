@@ -22,8 +22,8 @@ class ResidualBlock(nn.Module):
         self.res_flag = inp == out
         inp = int(inp * droprate) if not keep_input_size else inp
         out = int(out * droprate)
-        # mid = int((out * droprate) // exp)
-        mid = int(out * droprate)
+        mid = int((out * droprate) // exp)
+        # mid = int(out * droprate)
         self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0, bias=False)
         self.bn1 = nn.BatchNorm2d(mid)
         self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -123,7 +123,7 @@ class Model(nn.Module):
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
-            ResidualBlock(64, 256, 4, self.keeprate, keep_input_size=True),
+            ResidualBlock(64, 256, 1, self.keeprate, keep_input_size=True),
             ResidualBlock(256, 256, 4, self.keeprate),
             ResidualBlock(256, 256, 4, self.keeprate),
             ResidualBlock(256, 512, 4, self.keeprate, stride=2),
