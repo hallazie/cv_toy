@@ -20,20 +20,19 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.keeprate = droprate
         self.res_flag = inp == out
-        inp = int(inp * droprate) if not keep_input_size else inp
-        out = int(out * droprate)
-        mid = int((out * droprate) // exp)
-        # mid = int(out * droprate)
-        self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0, bias=False)
-        self.bn1 = nn.BatchNorm2d(mid)
-        self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(mid)
-        self.conv3 = nn.Conv2d(mid, out, kernel_size=1, padding=0, bias=False)
-        self.bn3 = nn.BatchNorm2d(out)
+        # inp = int(inp * droprate) if not keep_input_size else inp
+        # out = int(out * droprate)
+        mid = int(out // exp)
+        self.conv1 = nn.Conv2d(inp, int(mid*self.keeprate), kernel_size=1, padding=0, bias=False)
+        self.bn1 = nn.BatchNorm2d(int(mid*self.keeprate))
+        self.conv2 = nn.Conv2d(mid, int(mid*self.keeprate), kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(int(mid*self.keeprate))
+        self.conv3 = nn.Conv2d(mid, int(out*self.keeprate), kernel_size=1, padding=0, bias=False)
+        self.bn3 = nn.BatchNorm2d(int(out*self.keeprate))
         self.relu = nn.ReLU(inplace=True)
         if not self.res_flag:
-            self.convr = nn.Conv2d(inp, out, kernel_size=1, stride=stride, padding=0, bias=False)
-            self.bnr = nn.BatchNorm2d(out)
+            self.convr = nn.Conv2d(inp, int(out*self.keeprate), kernel_size=1, stride=stride, padding=0, bias=False)
+            self.bnr = nn.BatchNorm2d(int(out*self.keeprate))
         self.init_weight()
 
     def init_weight(self):
@@ -80,15 +79,15 @@ class ScaleUpBlock(nn.Module):
         super(ScaleUpBlock, self).__init__()
         self.keeprate = droprate
         self.res_flag = inp == out
-        inp = int(inp * droprate) if inp != 3 else 3
-        out = int(out * droprate)
+        # inp = int(inp * droprate) if inp != 3 else 3
+        # out = int(out * droprate)
         self.deconv1 = nn.ConvTranspose2d(inp, inp, kernel_size=2, stride=2, bias=False)
         self.bn1 = nn.BatchNorm2d(inp)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(inp, out, kernel_size=3, stride=1, padding=2, dilation=2, bias=False)
-        self.bn2 = nn.BatchNorm2d(out)
+        self.conv2 = nn.Conv2d(inp, int(out*self.keeprate), kernel_size=3, stride=1, padding=2, dilation=2, bias=False)
+        self.bn2 = nn.BatchNorm2d(int(out*self.keeprate))
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv3 = nn.Conv2d(out, out, kernel_size=1, stride=1, bias=False)
+        self.conv3 = nn.Conv2d(out, int(out*self.keeprate), kernel_size=1, stride=1, bias=False)
         self.relu3 = nn.ReLU(inplace=True)
         self.init_weight()
 
@@ -123,7 +122,7 @@ class Model(nn.Module):
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
-            ResidualBlock(64, 256, 1, self.keeprate, keep_input_size=True),
+            ResidualBlock(64, 256, 4, self.keeprate, keep_input_size=True),
             ResidualBlock(256, 256, 4, self.keeprate),
             ResidualBlock(256, 256, 4, self.keeprate),
             ResidualBlock(256, 512, 4, self.keeprate, stride=2),
@@ -160,7 +159,8 @@ class Model(nn.Module):
             weight = raw.weight.data.clone()
             weight_bn = raw_bn.weight.data.clone()
             index = np.argsort(np.sum(raw.weight.data.abs().clone().numpy(), axis=(1,2,3)))
-            index = index[:int(len(index)*self.keeprate)]
+            if i != 0:
+                index = index[:int(len(index)*self.keeprate)]
             flat.weight.data = weight[index]
             flat_bn.weight.data = weight_bn[index]
             s2 = flat.weight.shape
