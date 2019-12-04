@@ -16,23 +16,24 @@ from PIL import Image
 
 class ResidualBlock(nn.Module):
 
-    def __init__(self, inp, out, exp, droprate, keep_input_size=False, stride=1):
+    def __init__(self, inp, out, exp, dropend, keeprate, keep_input_size=False, stride=1):
         super(ResidualBlock, self).__init__()
-        self.keeprate = droprate
+        self.keeprate = keeprate
+        self.dropend = dropend
         self.res_flag = inp == out
-        # inp = int(inp * droprate) if not keep_input_size else inp
-        # out = int(out * droprate)
+        inp = int(inp * (keeprate if dropend == 'head' else 1)) if not keep_input_size else inp
+        out = int(out * (keeprate if dropend == 'tail' else 1))
         mid = int(out // exp)
-        self.conv1 = nn.Conv2d(inp, int(mid*self.keeprate), kernel_size=1, padding=0, bias=False)
-        self.bn1 = nn.BatchNorm2d(int(mid*self.keeprate))
-        self.conv2 = nn.Conv2d(mid, int(mid*self.keeprate), kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(int(mid*self.keeprate))
-        self.conv3 = nn.Conv2d(mid, int(out*self.keeprate), kernel_size=1, padding=0, bias=False)
-        self.bn3 = nn.BatchNorm2d(int(out*self.keeprate))
+        self.conv1 = nn.Conv2d(inp, mid, kernel_size=1, padding=0, bias=False)
+        self.bn1 = nn.BatchNorm2d(mid)
+        self.conv2 = nn.Conv2d(mid, mid, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(mid)
+        self.conv3 = nn.Conv2d(mid, out, kernel_size=1, padding=0, bias=False)
+        self.bn3 = nn.BatchNorm2d(out)
         self.relu = nn.ReLU(inplace=True)
         if not self.res_flag:
-            self.convr = nn.Conv2d(inp, int(out*self.keeprate), kernel_size=1, stride=stride, padding=0, bias=False)
-            self.bnr = nn.BatchNorm2d(int(out*self.keeprate))
+            self.convr = nn.Conv2d(inp, out, kernel_size=1, stride=stride, padding=0, bias=False)
+            self.bnr = nn.BatchNorm2d(out)
         self.init_weight()
 
     def init_weight(self):
@@ -75,19 +76,19 @@ class ResidualBlock(nn.Module):
 
 class ScaleUpBlock(nn.Module):
 
-    def __init__(self, inp, out, droprate):
+    def __init__(self, inp, out, dropend, keeprate):
         super(ScaleUpBlock, self).__init__()
-        self.keeprate = droprate
+        self.keeprate = keeprate
         self.res_flag = inp == out
-        # inp = int(inp * droprate) if inp != 3 else 3
-        # out = int(out * droprate)
+        inp = int(inp * (keeprate if dropend == 'head' else 1)) if inp != 3 else 3
+        out = int(out * (keeprate if dropend == 'tail' else 1))
         self.deconv1 = nn.ConvTranspose2d(inp, inp, kernel_size=2, stride=2, bias=False)
         self.bn1 = nn.BatchNorm2d(inp)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(inp, int(out*self.keeprate), kernel_size=3, stride=1, padding=2, dilation=2, bias=False)
-        self.bn2 = nn.BatchNorm2d(int(out*self.keeprate))
+        self.conv2 = nn.Conv2d(inp, out, kernel_size=3, stride=1, padding=2, dilation=2, bias=False)
+        self.bn2 = nn.BatchNorm2d(out)
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv3 = nn.Conv2d(out, int(out*self.keeprate), kernel_size=1, stride=1, bias=False)
+        self.conv3 = nn.Conv2d(out, out, kernel_size=1, stride=1, bias=False)
         self.relu3 = nn.ReLU(inplace=True)
         self.init_weight()
 
@@ -122,22 +123,22 @@ class Model(nn.Module):
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False),
-            ResidualBlock(64, 256, 4, self.keeprate, keep_input_size=True),
-            ResidualBlock(256, 256, 4, self.keeprate),
-            ResidualBlock(256, 256, 4, self.keeprate),
-            ResidualBlock(256, 512, 4, self.keeprate, stride=2),
-            ResidualBlock(512, 512, 4, self.keeprate),
-            ResidualBlock(512, 512, 4, self.keeprate),
-            ResidualBlock(512, 512, 4, self.keeprate),
-            ResidualBlock(512, 1024, 4, self.keeprate, stride=2),
-            ResidualBlock(1024, 1024, 4, self.keeprate),
-            ResidualBlock(1024, 1024, 4, self.keeprate),
-            ResidualBlock(1024, 1024, 4, self.keeprate),
-            ResidualBlock(1024, 1024, 4, self.keeprate),
-            ResidualBlock(1024, 1024, 4, self.keeprate),
-            ResidualBlock(1024, 2048, 4, self.keeprate, stride=2),
-            ResidualBlock(2048, 2048, 4, self.keeprate),
-            ResidualBlock(2048, 2048, 4, self.keeprate),
+            ResidualBlock(64, 256, 4, 'tail', self.keeprate, keep_input_size=True),
+            ResidualBlock(256, 256, 4, 'head', self.keeprate),
+            ResidualBlock(256, 256, 4, 'tail', self.keeprate),
+            ResidualBlock(256, 512, 4, 'head', self.keeprate, stride=2),
+            ResidualBlock(512, 512, 4, 'tail', self.keeprate),
+            ResidualBlock(512, 512, 4, 'head', self.keeprate),
+            ResidualBlock(512, 512, 4, 'tail', self.keeprate),
+            ResidualBlock(512, 1024, 4, 'head', self.keeprate, stride=2),
+            ResidualBlock(1024, 1024, 4, 'tail', self.keeprate),
+            ResidualBlock(1024, 1024, 4, 'head', self.keeprate),
+            ResidualBlock(1024, 1024, 4, 'tail', self.keeprate),
+            ResidualBlock(1024, 1024, 4, 'head', self.keeprate),
+            ResidualBlock(1024, 1024, 4, 'tail', self.keeprate),
+            ResidualBlock(1024, 2048, 4, 'head', self.keeprate, stride=2),
+            ResidualBlock(2048, 2048, 4, 'tail', self.keeprate),
+            ResidualBlock(2048, 2048, 4, 'head', self.keeprate),
         ]
         conv_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
         conv_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
@@ -167,9 +168,9 @@ class Model(nn.Module):
             print('%s-->%s' % (str(s1), str(s2)))
             # print('%s-->%s' % (str(flat), str(raw)))
 
-        self.decoder1 = ScaleUpBlock(2048, 1024, self.keeprate)
-        self.decoder2 = ScaleUpBlock(1024, 512, self.keeprate)
-        self.decoder3 = ScaleUpBlock(512, 256, self.keeprate)
+        self.decoder1 = ScaleUpBlock(2048, 1024, 'tail', self.keeprate)
+        self.decoder2 = ScaleUpBlock(1024, 512, 'head', self.keeprate)
+        self.decoder3 = ScaleUpBlock(512, 256, 'tail', self.keeprate)
         self.encode_image = nn.Sequential(*modules_flat)
         # for x in self.encode_image.modules():
         #     if type(x)==nn.Conv2d or type(x)==nn.BatchNorm2d:
