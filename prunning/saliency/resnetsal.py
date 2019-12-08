@@ -58,7 +58,8 @@ class ResidualBlock(nn.Module):
                 elif idxc == 3:
                     des = self.convr
                 c1, c2 = des.weight.data.shape[0], des.weight.data.shape[1]
-                d1, d2 = np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(1,2,3)))[::-1][:c1], np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(0,2,3)))[::-1][:c2]
+                d1 = np.squeeze(np.argwhere(np.argsort(np.sum(np.absolute(src.weight.data.cpu().numpy()), axis=(1,2,3)))[::-1][:c1] + 1.))
+                d2 = np.squeeze(np.argwhere(np.argsort(np.sum(np.absolute(src.weight.data.cpu().numpy()), axis=(0,2,3)))[::-1][:c2] + 1.))
                 des.weight.data = src.weight.data[d1.tolist(),:,:,:][:,d2.tolist(),:,:].clone()
                 idxc += 1
             if type(src) == nn.BatchNorm2d:
@@ -71,8 +72,11 @@ class ResidualBlock(nn.Module):
                 elif idxb == 3:
                     des = self.bnr
                 c1 = des.weight.data.shape[0]
-                d1 = np.argsort(src.weight.data.cpu().numpy())[::-1][:c1]
+                d1 = np.squeeze(np.argwhere(np.argsort(np.absolute(src.weight.data.cpu().numpy()))[::-1][:c1] + 1.))
                 des.weight.data = src.weight.data[d1.tolist()].clone()
+                des.bias.data = src.bias.data[d1.tolist()].clone()
+                des.running_mean = src.running_mean[d1.tolist()].clone()
+                des.running_var = src.running_var[d1.tolist()].clone()
                 idxb += 1
 
     def forward(self, x):
@@ -125,7 +129,8 @@ class ScaleUpBlock(nn.Module):
                 elif idxc == 2:
                     des = self.conv3
                 c1, c2 = des.weight.data.shape[0], des.weight.data.shape[1]
-                d1, d2 = np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(1,2,3)))[::-1][:c1], np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(0,2,3)))[::-1][:c2]
+                d1 = np.squeeze(np.argwhere(np.argsort(np.sum(np.absolute(src.weight.data.cpu().numpy()), axis=(1,2,3)))[::-1][:c1] + 1.))
+                d2 = np.squeeze(np.argwhere(np.argsort(np.sum(np.absolute(src.weight.data.cpu().numpy()), axis=(0,2,3)))[::-1][:c2] + 1.))
                 des.weight.data = src.weight.data[d1.tolist(),:,:,:][:,d2.tolist(),:,:].clone()
                 idxc += 1
             if type(src) == nn.BatchNorm2d:
@@ -134,8 +139,11 @@ class ScaleUpBlock(nn.Module):
                 elif idxb == 1:
                     des = self.bn2
                 c1 = des.weight.data.shape[0]
-                d1 = np.argsort(src.weight.data.cpu().numpy())[::-1][:c1]
+                d1 = np.squeeze(np.argwhere(np.argsort(np.absolute(src.weight.data.cpu().numpy()))[::-1][:c1] + 1.))
                 des.weight.data = src.weight.data[d1.tolist()].clone()
+                des.bias.data = src.bias.data[d1.tolist()].clone()
+                des.running_mean = src.running_mean[d1.tolist()].clone()
+                des.running_var = src.running_var[d1.tolist()].clone()
                 idxb += 1
 
     def forward(self, x):
@@ -196,13 +204,21 @@ class Model(nn.Module):
         x = F.relu(x, inplace=True)
         return x
 
-    def prune(self, prunerate=0):
+    def prune(self, prunerate=1.):
         newmodel = Model(prunerate)
+        idx = 0
         for x, y in zip(self.encode_image.modules(), newmodel.encode_image.modules()):
-            if type(x) == ResidualBlock:
+            if type(x) in [nn.Conv2d, nn.BatchNorm2d] and idx == 0:
+                y.weight.data = x.weight.data.clone()
+            elif type(x) == ResidualBlock:
                 y.init_pretrained(x)
+                idx += 1
             elif type(x) == ScaleUpBlock:
                 y.init_pretrained(x)
+                idx += 1
+        cs = newmodel.saliency.weight.data.shape[1]
+        ds = np.squeeze(np.argwhere(np.argsort(np.sum(np.absolute(self.saliency.weight.data.cpu().numpy()), axis=(0,2,3)))[::-1][:cs] + 1.))
+        newmodel.saliency.weight.data = self.saliency.weight.data[:,ds.tolist(),:,:].clone()
         return newmodel
 
 if __name__ == "__main__":
@@ -214,7 +230,7 @@ if __name__ == "__main__":
     img = Variable(torch.from_numpy(img)).type(torch.FloatTensor).cuda()
     model = Model().cuda()
     model.load_state_dict(state_dict=state_dict, strict=True)
-    newmodel = model.prune(0.9).cuda()
+    newmodel = model.prune(0.5).cuda()
     out = model(img.cuda())
     print('output shape: %s' % (str(out.shape)))
     out = out.cpu().data.numpy()[0][0]
