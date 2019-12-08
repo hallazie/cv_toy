@@ -206,29 +206,37 @@ class Model(nn.Module):
         return newmodel
 
 if __name__ == "__main__":
-    img_path = 'G:\\datasets\\saliency\\SALICON\\images\\tiny\\i1.jpg'
+    checkpoint = torch.load('G:\\checkpoints\\saliency\\resnetprune\\model_best_256x320.pth.tar')
+    state_dict = checkpoint['state_dict']
+
+    img_path = 'G:\\datasets\\saliency\\SALICON\\images\\tiny\\COCO_train2014_000000000110.jpg'
     img = np.array(Image.open(img_path).resize((320, 256))).swapaxes(0,2).swapaxes(1,2)[np.newaxis]
     img = Variable(torch.from_numpy(img)).type(torch.FloatTensor).cuda()
     model = Model().cuda()
-    newmodel = model.prune(0.5)
-    # out = model(img.cuda())
-    # print('output shape: %s' % (str(out.shape)))
-    # out = out.cpu().data.numpy()[0][0]
-    # out = 255. * (out - np.min(out)) / (np.max(out) - np.min(out))
-    # out = Image.fromarray(out.astype('uint8')).resize((640, 480)).show()
-
-    flops, params = profile(model.cuda(), inputs=(img,))
-    g_flops = flops / float(1024 * 1024 * 1024)
-    m_params = params / float(1024 * 1024)
-    line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
+    model.load_state_dict(state_dict=state_dict, strict=True)
+    newmodel = model.prune(0.9).cuda()
+    out = model(img.cuda())
+    print('output shape: %s' % (str(out.shape)))
+    out = out.cpu().data.numpy()[0][0]
+    out = 255. * (out - np.min(out)) / (np.max(out) - np.min(out))
+    out = Image.fromarray(out.astype('uint8')).resize((640, 480)).show()
+    out = newmodel(img.cuda())
+    print('output shape: %s' % (str(out.shape)))
+    out = out.cpu().data.numpy()[0][0]
+    out = 255. * (out - np.min(out)) / (np.max(out) - np.min(out))
+    out = Image.fromarray(out.astype('uint8')).resize((640, 480)).show()
+    # flops, params = profile(model.cuda(), inputs=(img,))
+    # g_flops = flops / float(1024 * 1024 * 1024)
+    # m_params = params / float(1024 * 1024)
+    # line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
     
-    flops, params = profile(newmodel.cuda(), inputs=(img,))
-    g_flops = flops / float(1024 * 1024 * 1024)
-    m_params = params / float(1024 * 1024)
-    line_2 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
+    # flops, params = profile(newmodel.cuda(), inputs=(img,))
+    # g_flops = flops / float(1024 * 1024 * 1024)
+    # m_params = params / float(1024 * 1024)
+    # line_2 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
 
-    print(line_1)
-    print(line_2)
+    # print(line_1)
+    # print(line_2)
 
     # 1.0 GFLOPs=39.1216G   paramsize=68.367M
     # 0.5 GFLOPs=9.0962G    paramsize=13.9752M
