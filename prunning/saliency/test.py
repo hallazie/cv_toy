@@ -1,6 +1,7 @@
 # --*-- coding:utf-8 --*--
 
 import numpy as np
+import copy
 
 def run():
     a = np.array([
@@ -15,5 +16,16 @@ def run():
     print(b)
     print(a[b,:,:])
 
+class Model:
+    def __init__(self):
+        self.value = 10
+
+    def dcopy(self, dec):
+        t = copy.deepcopy(self)
+        return t
+
 if __name__ == '__main__':
-    run()
+    m = Model()
+    print(m)
+    p = m.dcopy(0)
+    print(p)

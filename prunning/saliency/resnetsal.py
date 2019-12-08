@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+import copy
 
 from torch.autograd import Variable
 from torchvision.models.resnet import resnet50, Bottleneck
@@ -35,29 +36,44 @@ class ResidualBlock(nn.Module):
         if not self.res_flag:
             self.convr = nn.Conv2d(inp, out, kernel_size=1, stride=stride, padding=0, bias=False)
             self.bnr = nn.BatchNorm2d(out)
-        self.init_weight()
+        self.__init_weight__()
 
-    def init_weight(self):
+    def __init_weight__(self):
         nn.init.kaiming_normal_(self.conv1.weight)
-        # nn.init.constant_(self.conv1.bias, 0.0)
         nn.init.kaiming_normal_(self.conv2.weight)
-        # nn.init.constant_(self.conv2.bias, 0.0)
         nn.init.kaiming_normal_(self.conv3.weight)
-        # nn.init.constant_(self.conv3.bias, 0.0)
         if not self.res_flag:
             nn.init.kaiming_normal_(self.convr.weight)
-            # nn.init.constant_(self.convr.bias, 0.0)
 
-    def init_pretrained(self, conv1, conv2, conv3, convr=None):
-        idx1 = np.sum(conv1.cpu().numpy(), axis=(1,2,3))[::-1][:mid]
-        idx2 = np.sum(conv2.cpu().numpy(), axis=(1,2,3))[::-1][:mid]
-        idx3 = np.sum(conv3.cpu().numpy(), axis=(1,2,3))[::-1][:out]
-        self.conv1.weight.data = conv1.weight.data[idx1.tolist()].clone()        
-        self.conv2.weight.data = conv2.weight.data[idx2.tolist()].clone()        
-        self.conv3.weight.data = conv3.weight.data[idx3.tolist()].clone()        
-        if not self.res_flag and convr != None:
-            idxr = np.sum(convr.cpu().numpy(), axis=(1,2,3))[::-1][:out]
-            self.convr.weight.data = convr.weight.data[idxr.tolist()].clone()    
+    def init_pretrained(self, resblock):
+        idxc, idxb = 0, 0
+        for src in resblock.modules():
+            if type(src) == nn.Conv2d:
+                if idxc == 0:
+                    des = self.conv1
+                elif idxc == 1:
+                    des = self.conv2
+                elif idxc == 2:
+                    des = self.conv3
+                elif idxc == 3:
+                    des = self.convr
+                c1, c2 = des.weight.data.shape[0], des.weight.data.shape[1]
+                d1, d2 = np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(1,2,3)))[::-1][:c1], np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(0,2,3)))[::-1][:c2]
+                des.weight.data = src.weight.data[d1.tolist(),:,:,:][:,d2.tolist(),:,:].clone()
+                idxc += 1
+            if type(src) == nn.BatchNorm2d:
+                if idxb == 0:
+                    des = self.bn1
+                elif idxb == 1:
+                    des = self.bn2
+                elif idxb == 2:
+                    des = self.bn3
+                elif idxb == 3:
+                    des = self.bnr
+                c1 = des.weight.data.shape[0]
+                d1 = np.argsort(src.weight.data.cpu().numpy())[::-1][:c1]
+                des.weight.data = src.weight.data[d1.tolist()].clone()
+                idxb += 1
 
     def forward(self, x):
         residual = x
@@ -91,15 +107,36 @@ class ScaleUpBlock(nn.Module):
         self.relu2 = nn.ReLU(inplace=True)
         self.conv3 = nn.Conv2d(out, out, kernel_size=1, stride=1, bias=False)
         self.relu3 = nn.ReLU(inplace=True)
-        self.init_weight()
+        self.__init_weight__()
 
-    def init_weight(self):
+    def __init_weight__(self):
         nn.init.kaiming_normal_(self.deconv1.weight)
-        # nn.init.constant_(self.deconv1.bias, 0.0)
         nn.init.kaiming_normal_(self.conv2.weight)
-        # nn.init.constant_(self.conv2.bias, 0.0)
         nn.init.kaiming_normal_(self.conv3.weight)
-        # nn.init.constant_(self.conv3.bias, 0.0)
+
+    def init_pretrained(self, scaleupblock):
+        idxc, idxb = 0, 0
+        for src in scaleupblock.modules():
+            if type(src) == nn.Conv2d or type(src) == nn.ConvTranspose2d:
+                if idxc == 0:
+                    des = self.deconv1
+                elif idxc == 1:
+                    des = self.conv2
+                elif idxc == 2:
+                    des = self.conv3
+                c1, c2 = des.weight.data.shape[0], des.weight.data.shape[1]
+                d1, d2 = np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(1,2,3)))[::-1][:c1], np.argsort(np.sum(src.weight.data.cpu().numpy(), axis=(0,2,3)))[::-1][:c2]
+                des.weight.data = src.weight.data[d1.tolist(),:,:,:][:,d2.tolist(),:,:].clone()
+                idxc += 1
+            if type(src) == nn.BatchNorm2d:
+                if idxb == 0:
+                    des = self.bn1
+                elif idxb == 1:
+                    des = self.bn2
+                c1 = des.weight.data.shape[0]
+                d1 = np.argsort(src.weight.data.cpu().numpy())[::-1][:c1]
+                des.weight.data = src.weight.data[d1.tolist()].clone()
+                idxb += 1
 
     def forward(self, x):
         x = self.deconv1(x)
@@ -115,10 +152,9 @@ class ScaleUpBlock(nn.Module):
 
 class Model(nn.Module):
 
-    def __init__(self, ):
+    def __init__(self, keeprate=1.):
         super(Model, self).__init__()
-        self.keeprate = math.sqrt(0.5)
-        modules_raw = list(resnet50(pretrained=False).children())[:-2]
+        self.keeprate = keeprate
         modules_flat = [
             nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
             nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
@@ -140,78 +176,59 @@ class Model(nn.Module):
             ResidualBlock(1024, 2048, 4, 'head', self.keeprate, stride=2),
             ResidualBlock(2048, 2048, 4, 'tail', self.keeprate),
             ResidualBlock(2048, 2048, 4, 'head', self.keeprate),
+            ScaleUpBlock(2048, 1024, 'tail', self.keeprate),
+            ScaleUpBlock(1024, 512, 'head', self.keeprate),
+            ScaleUpBlock(512, 256, 'tail', self.keeprate),
         ]
-        conv_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
-        conv_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.Conv2d or type(x) == nn.ConvTranspose2d]
-        # for x in conv_list1:
-        #     print(x)
-        # print('=========================')
-        # for x in conv_list2:
-        #     print(x)
-        bn_list1 = [x for x in nn.Sequential(*modules_raw).modules() if type(x) == nn.BatchNorm2d]
-        bn_list2 = [x for x in nn.Sequential(*modules_flat).modules() if type(x) == nn.BatchNorm2d]
-        try:
-            assert len(conv_list1) == len(conv_list2) and len(conv_list1) == len(bn_list1) and len(bn_list1) == len(bn_list2)
-        except Exception as e:
-            print('ASSERT ERROR: %s-%s' % (len(conv_list1), len(conv_list2)))
-            exit()
-        for i in range(len(conv_list1)):
-            raw, flat, raw_bn, flat_bn = conv_list1[i], conv_list2[i], bn_list1[i], bn_list2[i]
-            s1 = flat.weight.shape
-            weight = raw.weight.data.clone()
-            weight_bn = raw_bn.weight.data.clone()
-            index_in = np.argsort(np.sum(raw.weight.data.abs().clone().numpy(), axis=(1,2,3)))
-            index_out = np.argsort(np.sum(raw.weight.data.abs().clone().numpy(), axis=(0,2,3)))
-            if i != 0:
-                index_in = index_in[:int(len(index_in)*self.keeprate)]
-                index_out = index_out[:int(len(index_out)*self.keeprate)]
-            flat.weight.data = weight[index_in,:,:][:,index_out,:,:]
-            flat_bn.weight.data = weight_bn[index_in]
-            s2 = flat.weight.shape
-            print('%s-->%s' % (str(s1), str(s2)))
-            # print('%s-->%s' % (str(flat), str(raw)))
-
-        self.decoder1 = ScaleUpBlock(2048, 1024, 'tail', self.keeprate)
-        self.decoder2 = ScaleUpBlock(1024, 512, 'head', self.keeprate)
-        self.decoder3 = ScaleUpBlock(512, 256, 'tail', self.keeprate)
         self.encode_image = nn.Sequential(*modules_flat)
-        # for x in self.encode_image.modules():
-        #     if type(x)==nn.Conv2d or type(x)==nn.BatchNorm2d:
-        #         print(x)
-        # exit()
         self.saliency = nn.Conv2d(int(256*self.keeprate), 1, kernel_size=1, stride=1, padding=0, bias=False)
-        self.__init_weights__()
+        self.____init_weight__s__()
 
-    def __init_weights__(self):
+    def __repr__(self):
+        return 'ResNet model object: ' + str(id(self))
+
+    def ____init_weight__s__(self):
         nn.init.kaiming_normal_(self.saliency.weight)
-        # nn.init.constant_(self.saliency.bias, 0.0)
-        # nn.init.constant_(self.saliency.weight, 1.)
 
     def forward(self, x):
         x = self.encode_image(x)
-        x = self.decoder1(x)
-        x = self.decoder2(x)
-        x = self.decoder3(x)
         x = self.saliency(x)
         x = F.relu(x, inplace=True)
         return x
 
+    def prune(self, prunerate=0):
+        newmodel = Model(prunerate)
+        for x, y in zip(self.encode_image.modules(), newmodel.encode_image.modules()):
+            if type(x) == ResidualBlock:
+                y.init_pretrained(x)
+            elif type(x) == ScaleUpBlock:
+                y.init_pretrained(x)
+        return newmodel
+
 if __name__ == "__main__":
-    # img_path = 'G:\\datasets\\saliency\\SALICON\\images\\tiny\\i1.jpg'
-    # img = np.array(Image.open(img_path).resize((320, 256))).swapaxes(0,2).swapaxes(1,2)[np.newaxis]
-    # img = Variable(torch.from_numpy(img)).type(torch.FloatTensor)
+    img_path = 'G:\\datasets\\saliency\\SALICON\\images\\tiny\\i1.jpg'
+    img = np.array(Image.open(img_path).resize((320, 256))).swapaxes(0,2).swapaxes(1,2)[np.newaxis]
+    img = Variable(torch.from_numpy(img)).type(torch.FloatTensor).cuda()
     model = Model().cuda()
+    newmodel = model.prune(0.5)
     # out = model(img.cuda())
     # print('output shape: %s' % (str(out.shape)))
     # out = out.cpu().data.numpy()[0][0]
     # out = 255. * (out - np.min(out)) / (np.max(out) - np.min(out))
     # out = Image.fromarray(out.astype('uint8')).resize((640, 480)).show()
 
-    # flops, params = profile(model.cuda(), inputs=(sample_input,))
-    # g_flops = flops / float(1024 * 1024 * 1024)
-    # m_params = params / float(1024 * 1024)
-    # line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
-    # print(line_1)
+    flops, params = profile(model.cuda(), inputs=(img,))
+    g_flops = flops / float(1024 * 1024 * 1024)
+    m_params = params / float(1024 * 1024)
+    line_1 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
+    
+    flops, params = profile(newmodel.cuda(), inputs=(img,))
+    g_flops = flops / float(1024 * 1024 * 1024)
+    m_params = params / float(1024 * 1024)
+    line_2 = 'proned[%s]\tGFLOPs=%sG\tparamsize=%sM\n' % ('resnetsal', round(g_flops, 4), round(m_params, 4))
+
+    print(line_1)
+    print(line_2)
 
     # 1.0 GFLOPs=39.1216G   paramsize=68.367M
     # 0.5 GFLOPs=9.0962G    paramsize=13.9752M
