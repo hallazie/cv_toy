@@ -23,23 +23,14 @@ logger = logging.getLogger(__file__)
 
 data_path = '../data'
 batch_size = 32
-g_steps = 5
-d_steps = 20
-printing_steps = 20
-epochs = 100
+g_steps = 8
+d_steps = 16
+printing_steps = 50
+epochs = 500
 
 class generator(nn.Module):
 	def __init__(self, inp=1, out=784):
 		super(generator, self).__init__()
-		# self.net = nn.Sequential(
-		# 	nn.Linear(inp, 300),
-		# 	nn.LeakyReLU(inplace=True),
-		# 	nn.Linear(300, 1000),
-		# 	nn.LeakyReLU(inplace=True),
-		# 	nn.Linear(1000, 800),
-		# 	nn.LeakyReLU(inplace=True),
-		# 	nn.Linear(800, out),
-		# )
 
 		self.net = nn.Sequential(
 			nn.ConvTranspose2d(inp, 32, kernel_size=3, stride=1, padding=1, bias=False),
@@ -128,14 +119,19 @@ def run():
 	dataloader_mnist_train = t_data.DataLoader(mnist_trainset, batch_size=batch_size, shuffle=True)
 	logger.info('data init finished')
 
+	# criterion1 = nn.BCELoss()
+	# optimizer1 = optim.SGD(dis.parameters(), lr=0.001, momentum=0.9)
+	# criterion2 = nn.BCELoss()
+	# optimizer2 = optim.SGD(gen.parameters(), lr=0.001, momentum=0.9)
+
 	criterion1 = nn.BCELoss()
-	optimizer1 = optim.SGD(dis.parameters(), lr=0.001, momentum=0.9)
+	optimizer1 = optim.Adam(dis.parameters(), lr=1e-5)
 	criterion2 = nn.BCELoss()
-	optimizer2 = optim.SGD(gen.parameters(), lr=0.001, momentum=0.9)
+	optimizer2 = optim.Adam(gen.parameters(), lr=1e-5)
 
 	for epoch in range(epochs):
+		dis.zero_grad()
 		for d_step in range(d_steps):
-			dis.zero_grad()
 			for inp_real, _ in dataloader_mnist_train:
 				inp_real_x = inp_real
 				break
@@ -149,18 +145,24 @@ def run():
 			dis_total_loss = (dis_real_loss + dis_fake_loss) / 2.
 			dis_total_loss.backward()
 			optimizer1.step()
+		gen.zero_grad()
 		for g_step in range(g_steps):
-			gen.zero_grad()
 			gen_inp = make_some_noise_2d()
 			gen_out = gen(gen_inp)
 			dis_out_gen_training = dis(gen_out.reshape(batch_size, 784))
 			gen_loss = criterion2(dis_out_gen_training, Variable(torch.ones(batch_size, 1)))
 			gen_loss.backward()
 			optimizer2.step()
-		if epoch%printing_steps==0:
-			torch.save(dis, '../data/dis-%s.pkl' % epoch)
-			torch.save(gen, '../data/gen-%s.pkl' % epoch)
+		if (epoch+1)%printing_steps==0:
+			torch.save(dis, '../data/dis-%s.pkl' % (epoch + 1))
+			torch.save(gen, '../data/gen-%s.pkl' % (epoch + 1))
 		logger.info(f'step {epoch} finished, with G-Loss: {gen_loss.data.item()}, D-Loss: {dis_fake_loss.data.item()} + {dis_real_loss.data.item()}')
+
+def test():
+	gen = torch.load('../data/gen-%s.pkl' % 400)
+	gen_inp = make_some_noise_2d()
+	gen_out = gen(gen_inp)
+	plot_image(gen_out)
 
 if __name__ == '__main__':
 	run()
