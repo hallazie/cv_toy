@@ -9,19 +9,24 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.datasets as datasets
 import logging
+import os
 
 from torch.autograd import Variable
 from torch.utils import data as t_data
 from torchvision import transforms
 
-logger = logging.getLogger()
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__file__)
 
 data_path = '../data'
 batch_size = 32
-g_steps = 20
+g_steps = 5
 d_steps = 20
-printing_steps = 100
-epochs = 1000
+printing_steps = 20
+epochs = 100
 
 class generator(nn.Module):
 	def __init__(self, inp=1, out=784):
@@ -103,22 +108,16 @@ def plot_image(array, number=None):
 	plt.show()
 
 def make_some_noise():
-	return torch.rand(batch_size, 100).cuda()
+	return torch.rand(batch_size, 100)
 
 def make_some_noise_2d():
-	return torch.rand(batch_size, 1, 7, 7).cuda()
-
-def test():
-	gen = torch.load('../data/gen-%s.pkl' % 500).cuda()
-	gen_inp = make_some_noise_2d()
-	gen_out = gen(gen_inp)
-	plot_image(gen_out)
+	return torch.rand(batch_size, 1, 7, 7)
 
 def run():
 	if torch.cuda.is_available():
 		logger.info('using GPU for training')
-		dis = discriminator().cuda()
-		gen = generator().cuda()
+		dis = discriminator()
+		gen = generator()
 	else:
 		logger.info('using CPU for training')
 		dis = discriminator()
@@ -127,7 +126,7 @@ def run():
 	data_transforms = transforms.Compose([transforms.ToTensor()])
 	mnist_trainset = datasets.MNIST(root=data_path, train=True, download=False, transform=data_transforms)
 	dataloader_mnist_train = t_data.DataLoader(mnist_trainset, batch_size=batch_size, shuffle=True)
-	
+	logger.info('data init finished')
 
 	criterion1 = nn.BCELoss()
 	optimizer1 = optim.SGD(dis.parameters(), lr=0.001, momentum=0.9)
@@ -135,34 +134,33 @@ def run():
 	optimizer2 = optim.SGD(gen.parameters(), lr=0.001, momentum=0.9)
 
 	for epoch in range(epochs):
-		logger.info(epoch)
 		for d_step in range(d_steps):
 			dis.zero_grad()
 			for inp_real, _ in dataloader_mnist_train:
 				inp_real_x = inp_real
 				break
-			inp_real_x = inp_real_x.reshape(batch_size, 784).cuda()
+			inp_real_x = inp_real_x.reshape(batch_size, 784)
 			dis_real_out = dis(inp_real_x)
-			dis_real_loss = criterion1(dis_real_out, Variable(torch.ones(batch_size, 1)).cuda())
-			dis_real_loss.backward()
+			dis_real_loss = criterion1(dis_real_out, Variable(torch.ones(batch_size, 1)))
 			inp_fake_x_gen = make_some_noise_2d()
 			inp_fake_x = gen(inp_fake_x_gen).detach()
 			dis_fake_out = dis(inp_fake_x.reshape(batch_size, 784))
-			dis_fake_loss = criterion1(dis_fake_out, Variable(torch.zeros(batch_size, 1)).cuda())
-			dis_fake_loss.backward()
+			dis_fake_loss = criterion1(dis_fake_out, Variable(torch.zeros(batch_size, 1)))
+			dis_total_loss = (dis_real_loss + dis_fake_loss) / 2.
+			dis_total_loss.backward()
 			optimizer1.step()
 		for g_step in range(g_steps):
 			gen.zero_grad()
 			gen_inp = make_some_noise_2d()
 			gen_out = gen(gen_inp)
 			dis_out_gen_training = dis(gen_out.reshape(batch_size, 784))
-			gen_loss = criterion2(dis_out_gen_training, Variable(torch.ones(batch_size, 1)).cuda())
+			gen_loss = criterion2(dis_out_gen_training, Variable(torch.ones(batch_size, 1)))
 			gen_loss.backward()
 			optimizer2.step()
 		if epoch%printing_steps==0:
-			# plot_image(gen_out)
 			torch.save(dis, '../data/dis-%s.pkl' % epoch)
 			torch.save(gen, '../data/gen-%s.pkl' % epoch)
+		logger.info(f'step {epoch} finished, with G-Loss: {gen_loss.data.item()}, D-Loss: {dis_fake_loss.data.item()} + {dis_real_loss.data.item()}')
 
 if __name__ == '__main__':
 	run()
